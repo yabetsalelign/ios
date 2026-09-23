@@ -1,0 +1,17 @@
+{
+  "name": "StockFlow - Smarter Inventory, Smoother Operations",
+  "short_name": "StockFlow",
+  "description": "Production-ready inventory and customer sales ledger",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F8FAFC",
+  "theme_color": "#0F172A",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
