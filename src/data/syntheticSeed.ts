@@ -2,10 +2,8 @@ import {
   Customer,
   CustomerFinancialSummary,
   CustomerLedgerEntry,
-  CustomerPayment,
   InventoryTransaction,
   Product,
-  Sale,
   User,
 } from '../types';
 

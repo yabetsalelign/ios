@@ -3,9 +3,11 @@
 import React, { useState, useMemo } from 'react';
 import { Search, ChevronRight, Users, ArrowUpDown, X } from 'lucide-react';
 import { useStockFlow } from '../../context/StockFlowContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function CustomerList() {
   const { customers, getCustomerSummary, setSelectedCustomerId } = useStockFlow();
+  const { t } = useLanguage();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterDebtOnly, setFilterDebtOnly] = useState(false);
@@ -32,8 +34,8 @@ export default function CustomerList() {
       {/* Top Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Customers</h1>
-          <p className="text-xs text-slate-500">Wholesale clients and financial balances</p>
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">{t.customers.title}</h1>
+          <p className="text-xs text-slate-500">{t.customers.subtitle}</p>
         </div>
       </div>
 
@@ -45,13 +47,14 @@ export default function CustomerList() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search customers by name, phone or location..."
+            placeholder={t.customers.searchPlaceholder}
             className="w-full bg-white border border-slate-200/90 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all shadow-2xs"
           />
           {searchQuery && (
             <button
               type="button"
               onClick={() => setSearchQuery('')}
+              aria-label="Clear search"
               className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
             >
               <X className="w-3.5 h-3.5" />
@@ -69,17 +72,17 @@ export default function CustomerList() {
           }`}
         >
           <ArrowUpDown className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">With Balance</span>
+          <span className="hidden sm:inline">{t.customers.filterWithBalance}</span>
         </button>
       </div>
 
-      {/* Customer List matching Screen 11 */}
+      {/* Customer List */}
       <div className="space-y-2.5">
         {filteredCustomers.length === 0 ? (
           <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center">
             <Users className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-            <p className="text-sm font-semibold text-slate-700">No customers found</p>
-            <p className="text-xs text-slate-400 mt-1">Try adjusting your search criteria</p>
+            <p className="text-sm font-semibold text-slate-700">{t.customers.noCustomersFound}</p>
+            <p className="text-xs text-slate-400 mt-1">{t.customers.noCustomersFoundSub}</p>
           </div>
         ) : (
           filteredCustomers.map((customer) => {
@@ -101,9 +104,9 @@ export default function CustomerList() {
                     <h3 className="font-semibold text-sm text-slate-900 truncate group-hover:text-blue-600 transition-colors">
                       {customer.name}
                     </h3>
-                    <p className="text-[11px] text-slate-400">{customer.phone}</p>
+                    <p className="text-[11px] text-slate-400 font-mono">{customer.phone}</p>
                     <p className="text-[11px] text-slate-500 mt-0.5">
-                      {summary.transactionCount} transactions recorded
+                      {summary.transactionCount} {t.customers.transactionsCount}
                     </p>
                   </div>
                 </div>
@@ -119,11 +122,11 @@ export default function CustomerList() {
                       }`}
                     >
                       {hasDebt
-                        ? `Outstanding: ${summary.outstandingBalance.toLocaleString()} ETB`
-                        : 'Outstanding: 0 ETB'}
+                        ? `${t.customers.amountOwed}: ${summary.outstandingBalance.toLocaleString()} ETB`
+                        : `${t.customers.settled} (0 ETB)`}
                     </div>
-                    <p className="text-[10px] text-slate-400 mt-0.5">
-                      Total Sales: {summary.totalSales.toLocaleString()} ETB
+                    <p className="text-[10px] text-slate-400 mt-0.5 font-mono">
+                      {t.customers.totalSales}: {summary.totalSales.toLocaleString()} ETB
                     </p>
                   </div>
                   <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-slate-700 group-hover:translate-x-0.5 transition-all" />

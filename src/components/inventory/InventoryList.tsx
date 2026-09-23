@@ -1,13 +1,19 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Search, ScanBarcode, ArrowLeft, Plus, X, Layers, AlertCircle } from 'lucide-react';
+import { Search, ScanBarcode, ArrowLeft, Plus, X, Layers } from 'lucide-react';
 import { useStockFlow } from '../../context/StockFlowContext';
-import { Product } from '../../types';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function InventoryList() {
-  const { products, selectedProductId, setSelectedProductId, setIsQuickActionOpen, setScaffoldAction } =
-    useStockFlow();
+  const {
+    products,
+    selectedProductId,
+    setSelectedProductId,
+    setActiveModal,
+    setPreselectedProductId,
+  } = useStockFlow();
+  const { t } = useLanguage();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'in_stock' | 'low_stock' | 'out_of_stock'>('all');
@@ -43,18 +49,18 @@ export default function InventoryList() {
       {/* Top Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Inventory</h1>
-          <p className="text-xs text-slate-500">Track and manage physical stock in cartons</p>
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">{t.inventory.title}</h1>
+          <p className="text-xs text-slate-500">{t.inventory.subtitle}</p>
         </div>
         <button
           type="button"
           onClick={() => {
-            setScaffoldAction('add_product');
+            setActiveModal('add_product');
           }}
-          className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 bg-slate-900 text-white rounded-xl text-xs font-semibold hover:bg-slate-800 transition-colors"
+          className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 text-white rounded-xl text-xs font-semibold hover:bg-slate-800 transition-colors shadow-2xs"
         >
           <Plus className="w-3.5 h-3.5" />
-          <span>Add Product</span>
+          <span>{t.inventory.addProduct}</span>
         </button>
       </div>
 
@@ -66,13 +72,14 @@ export default function InventoryList() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search products by name or SKU..."
+            placeholder={t.inventory.searchPlaceholder}
             className="w-full bg-white border border-slate-200/90 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all shadow-2xs"
           />
           {searchQuery && (
             <button
               type="button"
               onClick={() => setSearchQuery('')}
+              aria-label="Clear search"
               className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
             >
               <X className="w-3.5 h-3.5" />
@@ -98,7 +105,8 @@ export default function InventoryList() {
               <button
                 type="button"
                 onClick={() => setIsScannerOpen(false)}
-                className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-slate-500"
+                aria-label="Close scanner"
+                className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:text-slate-900"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -122,7 +130,7 @@ export default function InventoryList() {
         </div>
       )}
 
-      {/* Filter Pills matching Screen 3 */}
+      {/* Filter Pills */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar text-xs font-medium">
         <button
           type="button"
@@ -133,7 +141,7 @@ export default function InventoryList() {
               : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300'
           }`}
         >
-          All
+          {t.inventory.filterAll}
         </button>
         <button
           type="button"
@@ -144,7 +152,7 @@ export default function InventoryList() {
               : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300'
           }`}
         >
-          In Stock
+          {t.inventory.filterInStock}
         </button>
         <button
           type="button"
@@ -155,7 +163,7 @@ export default function InventoryList() {
               : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300'
           }`}
         >
-          Low Stock
+          {t.inventory.filterLowStock}
         </button>
         <button
           type="button"
@@ -166,7 +174,7 @@ export default function InventoryList() {
               : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300'
           }`}
         >
-          Out of Stock
+          {t.inventory.filterOutOfStock}
         </button>
       </div>
 
@@ -175,8 +183,8 @@ export default function InventoryList() {
         {filteredProducts.length === 0 ? (
           <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center">
             <Layers className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-            <p className="text-sm font-semibold text-slate-700">No products found</p>
-            <p className="text-xs text-slate-400 mt-1">Try searching a different SKU or name</p>
+            <p className="text-sm font-semibold text-slate-700">{t.inventory.noProductsFound}</p>
+            <p className="text-xs text-slate-400 mt-1">{t.inventory.noProductsFoundSub}</p>
           </div>
         ) : (
           filteredProducts.map((product) => {
@@ -207,27 +215,27 @@ export default function InventoryList() {
                     <p className="text-[11px] text-slate-400 font-mono">SKU: {product.sku}</p>
                     <p className="text-xs font-bold text-slate-800 mt-0.5">
                       {product.currentStockCartons}{' '}
-                      <span className="font-normal text-slate-500">cartons</span>
+                      <span className="font-normal text-slate-500">{t.inventory.cartons}</span>
                     </p>
                   </div>
                 </div>
 
-                {/* Stock Status Pill matching Screen 3 */}
+                {/* Stock Status Pill */}
                 <div className="flex-shrink-0 text-right">
                   {isOutOfStock ? (
                     <span className="inline-block text-[11px] font-semibold text-rose-700 bg-rose-50 border border-rose-200/60 px-2.5 py-1 rounded-full">
-                      Out of Stock
+                      {t.inventory.outOfStock}
                     </span>
                   ) : isLowStock ? (
                     <span className="inline-block text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200/60 px-2.5 py-1 rounded-full">
-                      Low Stock
+                      {t.inventory.lowStock}
                     </span>
                   ) : (
                     <span className="inline-block text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2.5 py-1 rounded-full">
-                      In Stock
+                      {t.inventory.inStock}
                     </span>
                   )}
-                  <p className="text-[10px] text-slate-400 mt-1 font-medium">
+                  <p className="text-[10px] text-slate-400 mt-1 font-medium font-mono">
                     {product.sellingPricePerCarton.toLocaleString()} ETB / ctn
                   </p>
                 </div>
@@ -237,7 +245,7 @@ export default function InventoryList() {
         )}
       </div>
 
-      {/* Product Detail Modal / Sheet (Screen 4) */}
+      {/* Product Detail Modal / Sheet */}
       {selectedProduct && (
         <div
           role="dialog"
@@ -256,11 +264,12 @@ export default function InventoryList() {
                 className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900"
               >
                 <ArrowLeft className="w-4 h-4" />
-                <span>Back to Inventory</span>
+                <span>{t.inventory.backToStock}</span>
               </button>
               <button
                 type="button"
                 onClick={() => setSelectedProductId(null)}
+                aria-label="Close details"
                 className="w-7 h-7 rounded-full bg-slate-100 text-slate-500 hover:text-slate-900 flex items-center justify-center"
               >
                 <X className="w-4 h-4" />
@@ -280,13 +289,17 @@ export default function InventoryList() {
               <p className="text-xs text-slate-400 font-mono mt-0.5">SKU: {selectedProduct.sku}</p>
 
               <div className="mt-2">
-                {selectedProduct.currentStockCartons <= selectedProduct.lowStockThresholdCartons ? (
+                {selectedProduct.currentStockCartons === 0 ? (
+                  <span className="inline-block text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 px-3 py-0.5 rounded-full">
+                    {t.inventory.outOfStock}
+                  </span>
+                ) : selectedProduct.currentStockCartons <= selectedProduct.lowStockThresholdCartons ? (
                   <span className="inline-block text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-0.5 rounded-full">
-                    Low Stock
+                    {t.inventory.lowStock}
                   </span>
                 ) : (
                   <span className="inline-block text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-0.5 rounded-full">
-                    In Stock
+                    {t.inventory.inStock}
                   </span>
                 )}
               </div>
@@ -295,18 +308,18 @@ export default function InventoryList() {
             {/* 3 Metric Summary Row (Current Stock | Min Stock | Pieces/Carton) */}
             <div className="grid grid-cols-3 gap-2.5 my-5 bg-slate-50 p-3.5 rounded-2xl border border-slate-100 text-center">
               <div>
-                <p className="text-lg font-bold text-slate-900">{selectedProduct.currentStockCartons}</p>
-                <p className="text-[10px] text-slate-500 uppercase tracking-wider font-medium">Current Stock</p>
-                <p className="text-[9px] text-slate-400">cartons</p>
+                <p className="text-lg font-bold text-slate-900 font-mono">{selectedProduct.currentStockCartons}</p>
+                <p className="text-[10px] text-slate-500 uppercase tracking-wider font-medium">{t.inventory.currentStock}</p>
+                <p className="text-[9px] text-slate-400">{t.inventory.cartons}</p>
               </div>
               <div className="border-x border-slate-200">
-                <p className="text-lg font-bold text-slate-900">{selectedProduct.lowStockThresholdCartons}</p>
-                <p className="text-[10px] text-slate-500 uppercase tracking-wider font-medium">Min. Stock</p>
-                <p className="text-[9px] text-slate-400">cartons</p>
+                <p className="text-lg font-bold text-slate-900 font-mono">{selectedProduct.lowStockThresholdCartons}</p>
+                <p className="text-[10px] text-slate-500 uppercase tracking-wider font-medium">{t.inventory.minStock}</p>
+                <p className="text-[9px] text-slate-400">{t.inventory.cartons}</p>
               </div>
               <div>
-                <p className="text-lg font-bold text-slate-900">{selectedProduct.piecesPerCarton || 24}</p>
-                <p className="text-[10px] text-slate-500 uppercase tracking-wider font-medium">Pieces/Carton</p>
+                <p className="text-lg font-bold text-slate-900 font-mono">{selectedProduct.piecesPerCarton || 24}</p>
+                <p className="text-[10px] text-slate-500 uppercase tracking-wider font-medium">{t.inventory.piecesPerCarton}</p>
                 <p className="text-[9px] text-slate-400">metadata</p>
               </div>
             </div>
@@ -314,22 +327,22 @@ export default function InventoryList() {
             {/* Product Specifications Grid */}
             <div className="space-y-2 border-t border-slate-100 pt-4 text-xs">
               <div className="flex justify-between py-1 border-b border-slate-50">
-                <span className="text-slate-500">Category</span>
+                <span className="text-slate-500">{t.inventory.category}</span>
                 <span className="font-semibold text-slate-800">{selectedProduct.category}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-50">
-                <span className="text-slate-500">Primary Unit</span>
-                <span className="font-semibold text-slate-800 uppercase">Carton</span>
+                <span className="text-slate-500">{t.inventory.unit}</span>
+                <span className="font-semibold text-slate-800 uppercase">{t.inventory.cartons}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-50">
-                <span className="text-slate-500">Price per Carton</span>
-                <span className="font-bold text-slate-900">
+                <span className="text-slate-500">{t.inventory.sellingPrice}</span>
+                <span className="font-bold text-slate-900 font-mono">
                   {selectedProduct.sellingPricePerCarton.toLocaleString()} ETB
                 </span>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-50">
-                <span className="text-slate-500">Cost per Carton</span>
-                <span className="font-medium text-slate-700">
+                <span className="text-slate-500">{t.inventory.costPrice}</span>
+                <span className="font-medium text-slate-700 font-mono">
                   {selectedProduct.costPerCarton.toLocaleString()} ETB
                 </span>
               </div>
@@ -340,12 +353,13 @@ export default function InventoryList() {
               <button
                 type="button"
                 onClick={() => {
+                  setPreselectedProductId(selectedProduct.id);
                   setSelectedProductId(null);
-                  setScaffoldAction('purchase');
+                  setActiveModal('purchase');
                 }}
                 className="flex-1 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-transform active:scale-[0.99] shadow-sm"
               >
-                Record Purchase (Add Stock)
+                {t.inventory.addStock}
               </button>
             </div>
           </div>
