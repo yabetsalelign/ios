@@ -4,7 +4,7 @@
  */
 
 /**
- * Calculates updated stock in cartons after a sale dispatch.
+ * Calculates updated stock in cartons after a sale.
  * Prevents negative inventory.
  */
 export function calculateStockAfterSale(currentStockCartons: number, quantitySoldCartons: number): number {

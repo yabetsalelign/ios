@@ -49,9 +49,21 @@ export interface TransactionSuccessFeedback {
   details: string[];
 }
 
+export interface ToastNotification {
+  id: string;
+  type: 'sale' | 'payment' | 'purchase' | 'info';
+  title: string;
+  message: string;
+}
+
 interface StockFlowContextValue {
   currentUser: User;
+  isAuthenticated: boolean;
+  login: (role: UserRole, email?: string) => void;
+  logout: () => void;
   switchRole: (role: UserRole) => void;
+  isProfileOpen: boolean;
+  setIsProfileOpen: (open: boolean) => void;
   activeTab: ActiveTab;
   setActiveTab: (tab: ActiveTab) => void;
   selectedCustomerId: string | null;
@@ -69,7 +81,10 @@ interface StockFlowContextValue {
   preselectedProductId: string | null;
   setPreselectedProductId: (id: string | null) => void;
 
-  // Transaction Feedback
+  // Transaction Feedback (Lightweight Non-blocking Toasts)
+  toast: ToastNotification | null;
+  showToast: (toast: Omit<ToastNotification, 'id'>) => void;
+  dismissToast: () => void;
   successFeedback: TransactionSuccessFeedback | null;
   setSuccessFeedback: (feedback: TransactionSuccessFeedback | null) => void;
 
@@ -80,6 +95,7 @@ interface StockFlowContextValue {
   // Data & Calculations
   products: Product[];
   customers: Customer[];
+  rawTransactions: RawLedgerTransaction[];
   inventoryTransactions: InventoryTransaction[];
   getCustomerSummary: (customerId: string) => CustomerFinancialSummary;
   getCustomerLedgerData: (customerId: string) => {
@@ -104,7 +120,31 @@ interface StockFlowContextValue {
 const StockFlowContext = createContext<StockFlowContextValue | undefined>(undefined);
 
 export function StockFlowProvider({ children }: { children: React.ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<User>(INITIAL_USER);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const active = localStorage.getItem('sf_auth_active');
+      return active === 'true';
+    }
+    return false;
+  });
+
+  const [currentUser, setCurrentUser] = useState<User>(() => {
+    if (typeof window !== 'undefined') {
+      const savedRole = localStorage.getItem('sf_user_role');
+      if (savedRole === 'warehouse') {
+        return {
+          id: 'usr-2',
+          name: 'Dawit Haile',
+          email: 'dawit@stockflow.app',
+          role: 'warehouse',
+          avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=128&auto=format&fit=crop&q=80',
+        };
+      }
+    }
+    return INITIAL_USER;
+  });
+
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
@@ -114,6 +154,17 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
   const [preselectedProductId, setPreselectedProductId] = useState<string | null>(null);
   const [successFeedback, setSuccessFeedback] = useState<TransactionSuccessFeedback | null>(null);
   const [isPreviewMobileFrame, setIsPreviewMobileFrame] = useState(false);
+  const [toast, setToast] = useState<ToastNotification | null>(null);
+
+  const showToast = React.useCallback((notification: Omit<ToastNotification, 'id'>) => {
+    setToast({ ...notification, id: `toast-${Date.now()}` });
+    // Auto-dismiss after 4 seconds
+    setTimeout(() => setToast(null), 4000);
+  }, []);
+
+  const dismissToast = React.useCallback(() => {
+    setToast(null);
+  }, []);
 
   // Dynamic In-Memory Collections (Ready for Supabase repository integration)
   const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
@@ -121,12 +172,51 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
   const [rawTransactions, setRawTransactions] = useState<RawLedgerTransaction[]>(RAW_CUSTOMER_TRANSACTIONS);
   const [inventoryTransactions, setInventoryTransactions] = useState<InventoryTransaction[]>(INITIAL_INVENTORY_TRANSACTIONS);
 
+  const login = (role: UserRole, email?: string) => {
+    const user: User = role === 'manager'
+      ? {
+          id: 'usr-1',
+          name: 'Alex Morgan',
+          email: email || 'alex@stockflow.app',
+          role: 'manager',
+          avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=128&auto=format&fit=crop&q=80',
+        }
+      : {
+          id: 'usr-2',
+          name: 'Dawit Haile',
+          email: email || 'dawit@stockflow.app',
+          role: 'warehouse',
+          avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=128&auto=format&fit=crop&q=80',
+        };
+
+    setCurrentUser(user);
+    setIsAuthenticated(true);
+    setActiveTab('home');
+    setSelectedCustomerId(null);
+    setSelectedProductId(null);
+    try {
+      localStorage.setItem('sf_auth_active', 'true');
+      localStorage.setItem('sf_user_role', role);
+    } catch {
+      // Ignored
+    }
+  };
+
+  const logout = () => {
+    setIsAuthenticated(false);
+    setIsProfileOpen(false);
+    setActiveTab('home');
+    setSelectedCustomerId(null);
+    setSelectedProductId(null);
+    try {
+      localStorage.removeItem('sf_auth_active');
+    } catch {
+      // Ignored
+    }
+  };
+
   const switchRole = (role: UserRole) => {
-    setCurrentUser((prev) => ({
-      ...prev,
-      role,
-      name: role === 'manager' ? 'Alex Morgan' : 'Dawit Haile',
-    }));
+    login(role);
     if (role === 'warehouse' && (activeTab === 'customers' || activeTab === 'reports')) {
       setActiveTab('home');
     }
@@ -213,6 +303,7 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
     const saleRef = generateTransactionReference('SALE');
     const customer = customers.find((c) => c.id === input.customerId);
     const customerName = customer ? customer.name : 'Unknown Customer';
+    const customerSummary = calculateCustomerFinancials(input.customerId, rawTransactions);
     const today = new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
 
     // 5. Update Inventory (Decrement cartons for all items in sale)
@@ -288,10 +379,11 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
       details: [
         `Reference: ${saleRef}`,
         `Customer: ${customerName}`,
-        `Total Sale: ${totalAmount.toLocaleString()} ETB`,
-        `Amount Paid: ${input.amountPaid.toLocaleString()} ETB`,
-        `New Outstanding Added: ${creditRemaining.toLocaleString()} ETB`,
-        `Items Dispatched: ${itemDescriptions.join('; ')}`,
+        `Cartons Sold: ${itemDescriptions.join('; ')}`,
+        `Total Amount: ${totalAmount.toLocaleString()} ETB`,
+        `Amount Paid: ${input.amountPaid.toLocaleString()} ETB (${input.paymentMethod || 'Cash'})`,
+        `Customer Remaining Balance: ${(customerSummary ? customerSummary.outstandingBalance + creditRemaining : creditRemaining).toLocaleString()} ETB`,
+        `Remaining Product Stock: ${updatedProducts.filter(p => input.items.some(i => i.productId === p.id)).map(p => `${p.name} (${p.currentStockCartons} cartons)`).join(', ')}`,
       ],
     });
 
@@ -343,10 +435,11 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
       details: [
         `Reference: ${payRef}`,
         `Customer: ${customerName}`,
-        `Amount Paid: ${input.amount.toLocaleString()} ETB`,
-        `Payment Method: ${input.paymentMethod}`,
-        `New Remaining Balance: ${newBalance.toLocaleString()} ETB`,
-        `Inventory: Unaffected (pure financial ledger update)`,
+        `Amount Received: ${input.amount.toLocaleString()} ETB`,
+        `Payment Method: ${input.paymentMethod}${input.reference ? ` (${input.reference})` : ''}`,
+        `Previous Balance: ${customerSummary.outstandingBalance.toLocaleString()} ETB`,
+        `Remaining Balance: ${newBalance.toLocaleString()} ETB`,
+        `Physical Inventory: Strictly unaffected (financial ledger update only)`,
       ],
     });
 
@@ -401,13 +494,14 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
     setSuccessFeedback({
       type: 'purchase',
       reference: purRef,
-      title: 'Purchase Recorded Successfully',
+      title: 'Stock Added Successfully',
       details: [
         `Reference: ${purRef}`,
         `Product: ${updatedProductName}`,
-        `Added: +${input.quantityCartons} cartons`,
-        `Stock: ${previousStock} → ${newStock} cartons`,
-        `Customer Balances: Unchanged`,
+        `Cartons Received: +${input.quantityCartons} cartons`,
+        `Previous Stock: ${previousStock} cartons`,
+        `New Total Stock: ${newStock} cartons`,
+        `Customer Debt Balances: Strictly unaffected (no financial changes)`,
       ],
     });
 
@@ -416,7 +510,12 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
 
   const value: StockFlowContextValue = {
     currentUser,
+    isAuthenticated,
+    login,
+    logout,
     switchRole,
+    isProfileOpen,
+    setIsProfileOpen,
     activeTab,
     setActiveTab,
     selectedCustomerId,
@@ -437,10 +536,14 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
     setIsPreviewMobileFrame,
     products,
     customers,
+    rawTransactions,
     inventoryTransactions,
     getCustomerSummary,
     getCustomerLedgerData,
     metrics,
+    toast,
+    showToast,
+    dismissToast,
     executeSale,
     executePayment,
     executePurchase,

@@ -13,6 +13,51 @@
 export type Language = 'en' | 'am';
 
 export interface Translations {
+  // ── Authentication / Login ────────────────────────────────────
+  auth: {
+    title: string;
+    subtitle: string;
+    email: string;
+    password: string;
+    signIn: string;
+    managerRole: string;
+    warehouseRole: string;
+    managerDesc: string;
+    warehouseDesc: string;
+    quickDemo: string;
+    fillManager: string;
+    fillWarehouse: string;
+    loginAs: string;
+    productLine: string;
+    footer: string;
+  };
+
+  // ── Profile & Settings ─────────────────────────────────────────
+  profile: {
+    title: string;
+    subtitle: string;
+    roleLabel: string;
+    permissions: string;
+    managerBadge: string;
+    warehouseBadge: string;
+    managerScope: string;
+    warehouseScope: string;
+    language: string;
+    currency: string;
+    offlineStatus: string;
+    ready: string;
+    logout: string;
+    switchRole: string;
+    close: string;
+    systemPreferences: string;
+    trackingUnit: string;
+    trackingUnitValue: string;
+    currencyValue: string;
+    developerFrame: string;
+    previewOn: string;
+    previewOff: string;
+  };
+
   // ── Navigation ──────────────────────────────────────────────
   nav: {
     home: string;
@@ -74,8 +119,8 @@ export interface Translations {
     totalItems: string;
     comingIn: string;
     sold: string;
-    recentDispatches: string;
-    logDispatch: string;
+    recentActivity: string;
+    logActivity: string;
   };
 
   // ── Stock / Inventory ─────────────────────────────────────────
@@ -104,6 +149,11 @@ export interface Translations {
     sellingPrice: string;
     costPrice: string;
     addStock: string;
+    scanTitle: string;
+    scanHint: string;
+    scanDone: string;
+    metadata: string;
+    perCarton: string;
   };
 
   // ── Customers ─────────────────────────────────────────────────
@@ -139,6 +189,16 @@ export interface Translations {
     adjustmentType: string;
     runningBalance: string;
     settled: string;
+    dateRef: string;
+    type: string;
+    amount: string;
+    accountProfile: string;
+    accountProfileSub: string;
+    accountName: string;
+    phone: string;
+    address: string;
+    notes: string;
+    none: string;
   };
 
   // ── Reports ───────────────────────────────────────────────────
@@ -152,6 +212,25 @@ export interface Translations {
     topStock: string;
     cartons: string;
     viewAll: string;
+    customersWhoOwe: string;
+    stockMovement: string;
+    salesSummaries: string;
+    lowStockReorder: string;
+    totalDispatched: string;
+    totalReceived: string;
+    netMovement: string;
+    cashCollected: string;
+    creditExtended: string;
+    reorderNow: string;
+    allCustomersSettled: string;
+    allStockHealthy: string;
+    colCustomer: string;
+    colProduct: string;
+    colSellPrice: string;
+    colStock: string;
+    colSold: string;
+    colTotalSales: string;
+    colOwes: string;
   };
 
   // ── Quick Action Sheet ────────────────────────────────────────
@@ -297,6 +376,18 @@ export interface Translations {
     etb: string;
     cartons: string;
     language: string;
+    backToStock: string;
+    backToCustomers: string;
+    backToDashboard: string;
+    loading: string;
+    errorTitle: string;
+    tryAgain: string;
+    noData: string;
+    switch: string;
+    cash: string;
+    telebirr: string;
+    bankTransfer: string;
+    dismiss: string;
   };
 }
 
@@ -304,6 +395,47 @@ export interface Translations {
 // ENGLISH
 // ─────────────────────────────────────────────────────────────────────────────
 export const en: Translations = {
+  auth: {
+    title: 'Sign In to StockFlow',
+    subtitle: 'Choose a role or sign in to manage products, stock, customers, and sales.',
+    email: 'Email address',
+    password: 'Password',
+    signIn: 'Sign In',
+    managerRole: 'Manager',
+    warehouseRole: 'Warehouse Staff',
+    managerDesc: 'Full access: sales, customer balances, reports, and inventory.',
+    warehouseDesc: 'Stock access: carton counts, receiving, and inventory activity.',
+    quickDemo: 'Quick Demo Access',
+    fillManager: 'Manager (Alex Morgan)',
+    fillWarehouse: 'Warehouse (Dawit Haile)',
+    loginAs: 'Log in as',
+    productLine: 'Inventory',
+    footer: 'StockFlow — Product, inventory, customer, and sales management',
+  },
+  profile: {
+    title: 'Profile & Settings',
+    subtitle: 'Account details and system preferences',
+    roleLabel: 'Current Role',
+    permissions: 'Assigned Permissions',
+    managerBadge: 'Manager Account',
+    warehouseBadge: 'Warehouse Account',
+    managerScope: 'Full access: pricing, customer balances, sales, and reports.',
+    warehouseScope: 'Stock work: carton counts, receiving, and inventory activity.',
+    language: 'Interface Language',
+    currency: 'Currency Standard',
+    offlineStatus: 'Sync & Local Storage',
+    ready: 'Online & Synchronized',
+    logout: 'Sign Out',
+    switchRole: 'Switch Role Experience',
+    close: 'Close',
+    systemPreferences: 'System Preferences',
+    trackingUnit: 'Inventory unit',
+    trackingUnitValue: 'Cartons (ctn)',
+    currencyValue: 'ETB (Ethiopian Birr)',
+    developerFrame: 'Developer iPhone Frame',
+    previewOn: 'On',
+    previewOff: 'Off',
+  },
   nav: {
     home: 'Home',
     stock: 'Stock',
@@ -314,7 +446,7 @@ export const en: Translations = {
     recordAction: 'New Action',
   },
   sidebar: {
-    tagline: 'Distribution Ledger',
+    tagline: 'Inventory & Sales',
     manager: 'Manager',
     warehouse: 'Warehouse',
     quickAction: 'New Action',
@@ -330,7 +462,7 @@ export const en: Translations = {
     greetingAfternoon: 'Good afternoon',
     greetingEvening: 'Good evening',
     subtitleManager: "Here's what's happening with your business today.",
-    subtitleWarehouse: "Here's today's stock and dispatch overview.",
+    subtitleWarehouse: "Here's today's stock overview.",
     warehouseRestriction: 'Warehouse View',
     warehouseRestrictionNote:
       'Financial details (stock value & customer balances) are only visible to the manager.',
@@ -343,7 +475,7 @@ export const en: Translations = {
     comingIn: 'Coming In',
     comingInSub: 'From purchases',
     sold: 'Sold',
-    soldSub: 'Dispatched to customers',
+    soldSub: 'Sold to customers',
     lowStock: 'Low Stock',
     lowStockSub: 'Needs restocking',
     recentActivity: 'Recent Activity',
@@ -355,12 +487,12 @@ export const en: Translations = {
   },
   warehouse: {
     title: 'Warehouse',
-    subtitle: 'Physical stock movement & dispatch activity',
+    subtitle: 'Stock movements and receiving activity',
     totalItems: 'Total Stock',
     comingIn: 'Coming In',
     sold: 'Sold',
-    recentDispatches: 'Recent Dispatches',
-    logDispatch: 'Log Activity',
+    recentActivity: 'Recent Stock Activity',
+    logActivity: 'Record Activity',
   },
   inventory: {
     title: 'Stock',
@@ -386,6 +518,11 @@ export const en: Translations = {
     sellingPrice: 'Selling Price / Carton',
     costPrice: 'Cost Price / Carton',
     addStock: 'Add Stock',
+    scanTitle: 'Scan barcode',
+    scanHint: 'Place the product barcode in the frame to open its stock details.',
+    scanDone: 'Done',
+    metadata: 'info',
+    perCarton: '/ ctn',
   },
   customers: {
     title: 'Customers',
@@ -417,10 +554,21 @@ export const en: Translations = {
     adjustmentType: 'Adjustment',
     runningBalance: 'Balance',
     settled: 'Settled',
+    dateRef: 'Date / Ref',
+    type: 'Type',
+    amount: 'Amount',
+    accountProfile: 'Account profile',
+    accountProfileSub: 'Customer contact and notes',
+    accountName: 'Account name',
+    phone: 'Customer phone',
+    address: 'Business address',
+    notes: 'Customer notes',
+    none: 'None',
+
   },
   reports: {
     title: 'Reports',
-    subtitle: 'Business summaries and financial overview',
+    subtitle: 'Who owes money, best-selling products, and low stock',
     totalSales: 'Total Sales',
     totalPaid: 'Total Paid',
     totalOwed: 'Total Owed',
@@ -428,6 +576,25 @@ export const en: Translations = {
     topStock: 'Stock Holdings',
     cartons: 'cartons',
     viewAll: 'View all',
+    customersWhoOwe: 'Customers Who Owe Money',
+    stockMovement: 'Stock Movement Summary',
+    salesSummaries: 'Best-selling products',
+    lowStockReorder: 'Low-stock / reorder list',
+    totalDispatched: 'Total Outgoing',
+    totalReceived: 'Total Incoming',
+    netMovement: 'Net Movement',
+    cashCollected: 'Cash & Electronic Paid',
+    creditExtended: 'Credit Extended',
+    reorderNow: 'Add Stock',
+    allCustomersSettled: 'All customer accounts are fully settled.',
+    allStockHealthy: 'All products are above the minimum stock level.',
+    colCustomer: 'Customer',
+    colProduct: 'Product',
+    colSellPrice: 'Sell price',
+    colStock: 'Stock',
+    colSold: 'Sold',
+    colTotalSales: 'Total sales',
+    colOwes: 'Owes',
   },
   quickAction: {
     title: 'What do you want to do?',
@@ -435,7 +602,7 @@ export const en: Translations = {
     sell: 'Sell Products',
     sellSub: 'Give products to a customer and record the sale',
     addStock: 'Add Stock',
-    addStockSub: 'Add cartons received into the warehouse',
+    addStockSub: 'Record cartons received into stock',
     customerPaid: 'Customer Paid',
     customerPaidSub: 'Record money received from a customer',
     newProduct: 'New Product',
@@ -462,7 +629,7 @@ export const en: Translations = {
     paymentMethod: 'How did they pay?',
     stillOwes: 'Still Owes',
     notes: 'Notes (optional)',
-    notesPlaceholder: 'e.g. Delivery note no., truck number…',
+    notesPlaceholder: 'e.g. Order number or batch note…',
     submit: 'Save Sale',
     submitting: 'Saving…',
     etb: 'ETB',
@@ -483,14 +650,14 @@ export const en: Translations = {
   },
   purchase: {
     title: 'Add Stock',
-    subtitle: 'Add cartons received into the warehouse',
+    subtitle: 'Record cartons received into stock',
     chooseProduct: 'Choose product',
     currentStock: 'In stock now',
     howManyCartons: 'How many cartons received?',
     costPerCarton: 'Cost per carton (ETB)',
     totalCost: 'Total Purchase Cost',
     supplierNote: 'Supplier / source note (optional)',
-    supplierPlaceholder: 'e.g. Factory Import Container #8',
+    supplierPlaceholder: 'e.g. Factory batch or supplier name',
     submit: 'Add to Stock',
     submitting: 'Saving…',
     etb: 'ETB',
@@ -560,6 +727,18 @@ export const en: Translations = {
     etb: 'ETB',
     cartons: 'cartons',
     language: 'Language',
+    backToStock: 'Back to Stock',
+    backToCustomers: 'Back to Customers',
+    backToDashboard: 'Back to Dashboard',
+    loading: 'Loading…',
+    errorTitle: "Couldn't load content",
+    tryAgain: 'Try Again',
+    noData: 'No records available',
+    switch: 'Switch',
+    cash: 'Cash',
+    telebirr: 'Telebirr',
+    bankTransfer: 'Bank Transfer',
+    dismiss: 'Dismiss',
   },
 };
 
@@ -568,6 +747,47 @@ export const en: Translations = {
 // Natural, everyday Amharic for an Ethiopian business / warehouse environment.
 // ─────────────────────────────────────────────────────────────────────────────
 export const am: Translations = {
+  auth: {
+    title: 'ወደ StockFlow ይግቡ',
+    subtitle: 'ምርት፣ እቃ፣ ደንበኛና ሽያጭ ለማስተዳደር ሚና ይምረጡ ወይም ይግቡ።',
+    email: 'የኢሜይል አድራሻ',
+    password: 'የይለፍ ቃል',
+    signIn: 'ግባ',
+    managerRole: 'ሥራ አስኪያጅ',
+    warehouseRole: 'የመጋዘን ሠራተኛ',
+    managerDesc: 'ሙሉ አስተዳደር፦ ሽያጭ፣ የደንበኞች ሂሳብ፣ ሪፖርቶችና እቃ ክምችት',
+    warehouseDesc: 'የእቃ ሥራ፦ የካርቶን ቆጠራ፣ መቀበልና የእቃ እንቅስቃሴ',
+    quickDemo: 'የሙከራ መለያዎች',
+    fillManager: 'ሥራ አስኪያጅ (Alex Morgan)',
+    fillWarehouse: 'የመጋዘን ሠራተኛ (Dawit Haile)',
+    loginAs: 'በዚህ ግባ፦',
+    productLine: 'እቃ',
+    footer: 'StockFlow — የምርት፣ እቃ፣ ደንበኛና ሽያጭ አስተዳደር',
+  },
+  profile: {
+    title: 'መገለጫና ምርጫዎች',
+    subtitle: 'የመለያ ዝርዝር እና የስርዓት ምርጫዎች',
+    roleLabel: 'የተመደበ ሚና',
+    permissions: 'የተሰጡ ፈቃዶች',
+    managerBadge: 'የሥራ አስኪያጅ መለያ',
+    warehouseBadge: 'የመጋዘን መለያ',
+    managerScope: 'ሙሉ አስተዳደር፦ ዋጋዎች፣ የደንበኛ ሂሳብ፣ ሽያጭና ሪፖርቶች።',
+    warehouseScope: 'የእቃ ሥራ፦ የካርቶን ቆጠራ፣ መቀበልና የእቃ እንቅስቃሴ።',
+    language: 'የስርዓቱ ቋንቋ',
+    currency: 'የገንዘብ ምንዛሬ',
+    offlineStatus: 'የማመሳሰል ሁኔታ',
+    ready: 'የተገናኘ & ዝግጁ',
+    logout: 'ውጣ',
+    switchRole: 'ሚና ቀይር',
+    close: 'ዝጋ',
+    systemPreferences: 'የስርዓት ምርጫዎች',
+    trackingUnit: 'የእቃ መለኪያ',
+    trackingUnitValue: 'ካርቶን',
+    currencyValue: 'ብር (የኢትዮጵያ ብር)',
+    developerFrame: 'የገንቢ iPhone ፍሬም',
+    previewOn: 'በርቷል',
+    previewOff: 'ጠፍቷል',
+  },
   nav: {
     home: 'መነሻ',
     stock: 'እቃ',
@@ -578,7 +798,7 @@ export const am: Translations = {
     recordAction: 'አዲስ',
   },
   sidebar: {
-    tagline: 'የስርጭት ደብተር',
+    tagline: 'እቃና ሽያጭ',
     manager: 'ሥራ አስኪያጅ',
     warehouse: 'መጋዘን',
     quickAction: 'አዲስ',
@@ -607,7 +827,7 @@ export const am: Translations = {
     comingIn: 'የሚገባ',
     comingInSub: 'ከግዢ',
     sold: 'የተሸጠ',
-    soldSub: 'ለደንበኞች የተላከ',
+    soldSub: 'ለደንበኞች የተሸጠ',
     lowStock: 'ያነሰ እቃ',
     lowStockSub: 'እንደገና ይሙሉ',
     recentActivity: 'የቅርብ ጊዜ እንቅስቃሴ',
@@ -619,12 +839,12 @@ export const am: Translations = {
   },
   warehouse: {
     title: 'መጋዘን',
-    subtitle: 'የእቃ ዝውውርና የላክ እቃ ዝርዝር',
+    subtitle: 'የእቃ ዝውውርና ቀረቤታ እንቅስቃሴ',
     totalItems: 'ጠቅላላ እቃ',
     comingIn: 'የሚገባ',
     sold: 'የወጣ',
-    recentDispatches: 'ቅርብ ጊዜ ላኮች',
-    logDispatch: 'እቃ ምዝገባ',
+    recentActivity: 'ቅርብ ጊዜ የእቃ እንቅስቃሴ',
+    logActivity: 'እቃ ምዝገባ',
   },
   inventory: {
     title: 'እቃ',
@@ -650,6 +870,11 @@ export const am: Translations = {
     sellingPrice: 'የሽያጭ ዋጋ / ካርቶን',
     costPrice: 'የዋጋ ወጪ / ካርቶን',
     addStock: 'እቃ ጨምር',
+    scanTitle: 'ባርኮድ ይቃኙ',
+    scanHint: 'የእቃውን ባርኮድ በፍሬሙ ውስጥ ያስቀምጡ።',
+    scanDone: 'ተጠናቋል',
+    metadata: 'መረጃ',
+    perCarton: '/ ካርቶን',
   },
   customers: {
     title: 'ደንበኞች',
@@ -666,69 +891,100 @@ export const am: Translations = {
     settled: 'ወረቀት ጸዳ',
   },
   ledger: {
-    outstanding: 'የሚከፍለው',
+    outstanding: 'የቀረ ዕዳ',
     totalSales: 'ጠቅላላ ሽያጭ',
-    totalPaid: 'ከፍሏል',
-    amountOwed: 'አሁንም ሂሳብ',
-    recordPayment: 'ደንበኛ ከፈለ',
-    newSale: 'ሸጥ',
-    transactions: 'ታሪክ',
-    accountSummary: 'ማጠቃለያ',
-    noTransactions: 'ምንም ግብይት የለም',
-    backToCustomers: 'ደንበኞች',
+    totalPaid: 'የተከፈለ',
+    amountOwed: 'የሚከፈል',
+    recordPayment: 'ክፍያ መመዝገብ',
+    newSale: 'አዲስ ሽያጭ',
+    transactions: 'ግብይቶች',
+    accountSummary: 'የደንበኛ ማጠቃለያ',
+    noTransactions: 'እስካሁን ግብይት የለም',
+    backToCustomers: 'ሁሉም ደንበኞች',
     saleType: 'ሽያጭ',
     paymentType: 'ክፍያ',
     adjustmentType: 'ማስተካከያ',
-    runningBalance: 'ሂሳብ',
-    settled: 'ጸዳ',
+    runningBalance: 'ቀሪ ሂሳብ',
+    settled: 'ተጠናቋል',
+    dateRef: 'ቀን / መለያ',
+    type: 'አይነት',
+    amount: 'መጠን',
+    accountProfile: 'የደንበኛ መረጃ',
+    accountProfileSub: 'ስልክ እና ማስታወሻ',
+    accountName: 'ስም',
+    phone: 'ስልክ',
+    address: 'አድራሻ',
+    notes: 'ማስታወሻ',
+    none: 'የለም',
   },
   reports: {
-    title: 'ሪፖርት',
-    subtitle: 'የንግድ ሂሳብ ማጠቃለያ',
+    title: 'ሪፖርቶች',
+    subtitle: 'ዕዳ፣ ምርጥ ሽያጮች እና ዝቅተኛ ስቶክ',
     totalSales: 'ጠቅላላ ሽያጭ',
-    totalPaid: 'ጠቅላላ ክፍያ',
-    totalOwed: 'ጠቅላላ ሂሳብ',
-    topCustomers: 'ከፍተኛ ሂሳብ ያላቸው ደንበኞች',
-    topStock: 'የእቃ ክምችት',
-    cartons: 'ካርቶን',
-    viewAll: 'ሁሉ ይመልከቱ',
+    totalPaid: 'የተከፈለ',
+    totalOwed: 'ጠቅላላ ዕዳ',
+    topCustomers: 'ምርጥ ደንበኞች',
+    topStock: 'ምርጥ ምርቶች',
+    cartons: 'ካርቶኖች',
+    viewAll: 'ሁሉን ይመልከቱ',
+    customersWhoOwe: 'ዕዳ ያለባቸው ደንበኞች',
+    stockMovement: 'የስቶክ እንቅስቃሴ',
+    salesSummaries: 'ምርጥ የሚሸጡ ምርቶች',
+    lowStockReorder: 'ዝቅተኛ ስቶክ',
+    totalDispatched: 'የወጣ',
+    totalReceived: 'የገባ',
+    netMovement: 'ጠቅላላ እንቅስቃሴ',
+    cashCollected: 'ጥሬ እና የኤሌክትሮኒክስ ክፍያ',
+    creditExtended: 'የተሰጠ ዕዳ',
+    reorderNow: 'ስቶክ ጨምር',
+    allCustomersSettled: 'ሁሉም ደንበኞች ክፍያቸውን ጨርሰዋል።',
+    allStockHealthy: 'ሁሉም ምርቶች በቂ ስቶክ አላቸው።',
+    colCustomer: 'ደንበኛ',
+    colProduct: 'ምርት',
+    colSellPrice: 'የሽያጭ ዋጋ',
+    colStock: 'ስቶክ',
+    colSold: 'የተሸጠ',
+    colTotalSales: 'ጠቅላላ ሽያጭ',
+    colOwes: 'ዕዳ',
   },
+
   quickAction: {
     title: 'ምን ማድረግ ይፈልጋሉ?',
-    subtitle: 'ማድረግ የሚፈልጉትን ዓይነት ይምረጡ',
-    sell: 'ሸጥ',
-    sellSub: 'ለደንበኛ እቃ ስጥና ሽያጩን ምዝግብ',
+    subtitle: 'ለመቀጠል አንድ ድርጊት ይምረጡ',
+    sell: 'ምርት ሽጥ',
+    sellSub: 'ለደንበኛ ምርት ሰጥተው ሽያጩን ይመዝግቡ',
     addStock: 'እቃ ጨምር',
-    addStockSub: 'የደረሰ ካርቶን ወደ መጋዘን ጨምር',
+    addStockSub: 'የደረሰ ካርቶን ወደ ስቶክ ይመዝግቡ',
     customerPaid: 'ደንበኛ ከፈለ',
-    customerPaidSub: 'ደንበኛ የከፈለ ገንዘብ ምዝገባ',
-    newProduct: 'አዲስ እቃ',
-    newProductSub: 'አዲስ ዓይነት እቃ ወደ ሲስተም ጨምር',
-    managerOnly: 'ሥራ አስኪያጅ ብቻ',
+    customerPaidSub: 'ከደንበኛ የተቀበሉትን ገንዘብ ይመዝግቡ',
+    newProduct: 'አዲስ ምርት',
+    newProductSub: 'አዲስ ምርት ወደ StockFlow ጨምር',
+    managerOnly: 'ለሥራ አስኪያጅ ብቻ',
   },
+
   sale: {
-    title: 'ሽያጭ',
-    subtitle: 'ለደንበኛ እቃ ስጥና ሽያጩን ምዝገባ',
+    title: 'ምርት ሽጥ',
+    subtitle: 'ለደንበኛ የተሰጠ ምርት ይመዝግቡ',
     chooseCustomer: 'ደንበኛ ምረጥ',
-    currentOwes: 'አሁን ሂሳቡ',
-    products: 'እቃዎች',
-    addProduct: 'እቃ ጨምር',
-    item: 'ዓይነት',
+    currentOwes: 'አሁን ያለበት ዕዳ',
+    products: 'ምርቶች',
+    addProduct: 'ምርት ጨምር',
+    item: 'ምርት',
     howManyCartons: 'ስንት ካርቶን?',
     pricePerCarton: 'የካርቶን ዋጋ (ብር)',
-    lineSubtotal: 'ድምር',
-    totalSale: 'ጠቅላላ',
-    paymentTerms: 'ክፍያ',
-    paidInFull: 'ሙሉ ከፈለ',
-    partial: 'ከፊል',
-    fullCredit: 'ሙሉ ሂሳብ',
-    amountPaid: 'ያከፈለው ብር',
+    lineSubtotal: 'ንዑስ ድምር',
+    totalSale: 'ጠቅላላ ሽያጭ',
+    paymentTerms: 'የክፍያ ሁኔታ',
+    paidInFull: 'ሙሉ ከፍሏል',
+    partial: 'በከፊል',
+    fullCredit: 'ሙሉ ዕዳ',
+    amountPaid: 'የከፈለው (ብር)',
     paymentMethod: 'እንዴት ከፈለ?',
-    stillOwes: 'አሁንም ሂሳብ',
-    notes: 'ማስታወሻ (አስፈላጊ ካልሆነ ትቶ ይሄ)',
-    notesPlaceholder: 'ለምሳሌ፦ ደረሰኝ ቁጥር፣ ተሽከርካሪ…',
-    submit: 'ሽያጩን አስቀምጥ',
-    submitting: 'በሂደት ላይ…',
+    stillOwes: 'አሁንም የሚከፍል',
+    notes: 'ማስታወሻ (አማራጭ)',
+    notesPlaceholder: 'ለምሳሌ፦ የትዕዛዝ ቁጥር ወይም የባች ማስታወሻ',
+    submit: 'ሽያጭ አስቀምጥ',
+    submitting: 'በማስቀመጥ ላይ…',
     etb: 'ብር',
   },
   payment: {
@@ -814,16 +1070,29 @@ export const am: Translations = {
     costNegative: 'ወጪ ከዜሮ ያነሰ መሆን አይቻልም።',
     unauthorized: 'ይህን ድርጊት ሥራ አስኪያጅ ብቻ ማድረግ ይችላል።',
   },
+
   common: {
     cancel: 'ሰርዝ',
     save: 'አስቀምጥ',
     close: 'ዝጋ',
     search: 'ፈልግ',
-    optional: 'አስፈላጊ ካልሆነ',
-    required: 'ያስፈልጋል',
+    optional: 'አማራጭ',
+    required: 'አስፈላጊ',
     etb: 'ብር',
     cartons: 'ካርቶን',
     language: 'ቋንቋ',
+    backToStock: 'ወደ ስቶክ',
+    backToCustomers: 'ወደ ደንበኞች',
+    backToDashboard: 'ወደ ዳሽቦርድ',
+    loading: 'በመጫን ላይ...',
+    errorTitle: 'ስህተት',
+    tryAgain: 'እንደገና ሞክር',
+    noData: 'መረጃ የለም',
+    switch: 'ቀይር',
+    cash: 'ጥሬ ገንዘብ',
+    telebirr: 'ቴሌብር',
+    bankTransfer: 'ባንክ',
+    dismiss: 'ዝጋ',
   },
 };
 
