@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { Language, Translations, translations } from '../i18n/translations';
 
 interface LanguageContextValue {
@@ -11,16 +11,18 @@ interface LanguageContextValue {
 
 const LanguageContext = createContext<LanguageContextValue | undefined>(undefined);
 
-function getInitialLanguage(): Language {
-  if (typeof window !== 'undefined') {
-    const stored = localStorage.getItem('sf_lang');
-    if (stored === 'en' || stored === 'am') return stored;
-  }
-  return 'en';
-}
-
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<Language>(getInitialLanguage);
+  // Always start with 'en' so server and initial client renders match,
+  // preventing React hydration mismatches.
+  const [language, setLanguageState] = useState<Language>('en');
+
+  // After mount, sync the stored preference from localStorage.
+  useEffect(() => {
+    const stored = localStorage.getItem('sf_lang');
+    if (stored === 'en' || stored === 'am') {
+      setLanguageState(stored);
+    }
+  }, []);
 
   const setLanguage = useCallback((lang: Language) => {
     setLanguageState(lang);
