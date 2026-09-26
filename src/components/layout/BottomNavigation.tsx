@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Home, Package, Users, BarChart3, Plus, Activity, MoreHorizontal } from 'lucide-react';
+import { Home, Package, Users, BarChart3, Plus, MoreHorizontal } from 'lucide-react';
 import { ActiveTab, useStockFlow } from '../../context/StockFlowContext';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -68,8 +68,8 @@ export default function BottomNavigation() {
           </button>
         </div>
 
-        {/* Slot 4: Customers or Activity */}
-        {isManager ? (
+        {/* Slot 4: Customers */}
+        {isManager && (
           <button
             type="button"
             onClick={() => handleTabClick('customers')}
@@ -82,21 +82,6 @@ export default function BottomNavigation() {
             <Users className={`w-5 h-5 flex-shrink-0 ${activeTab === 'customers' ? 'stroke-[2.5px]' : 'stroke-2'}`} />
             <span className={`text-[10px] leading-none tracking-tight ${activeTab === 'customers' ? 'font-bold' : 'font-medium'}`}>
               {t.nav.customers}
-            </span>
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={() => handleTabClick('activity')}
-            aria-label={t.nav.activity}
-            aria-current={activeTab === 'activity' ? 'page' : undefined}
-            className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors min-w-0 ${
-              activeTab === 'activity' ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
-            }`}
-          >
-            <Activity className={`w-5 h-5 flex-shrink-0 ${activeTab === 'activity' ? 'stroke-[2.5px]' : 'stroke-2'}`} />
-            <span className={`text-[10px] leading-none tracking-tight ${activeTab === 'activity' ? 'font-bold' : 'font-medium'}`}>
-              {t.nav.activity}
             </span>
           </button>
         )}

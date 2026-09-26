@@ -166,7 +166,7 @@ function RecordPurchaseContent() {
           {/* Cost per Carton */}
           <div>
             <label htmlFor="purchase-cost" className="block text-xs font-semibold text-slate-700 mb-1">
-              {t.purchase.costPerCarton} ({t.purchase.etb})
+              {t.purchase.costPerCarton}
             </label>
             <input
               id="purchase-cost"

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Home, Package, Users, BarChart3, Plus, Activity, MoreHorizontal, ShieldCheck } from 'lucide-react';
+import { Home, Package, Users, BarChart3, Plus, MoreHorizontal, ShieldCheck } from 'lucide-react';
 import { ActiveTab, useStockFlow } from '../../context/StockFlowContext';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -95,7 +95,6 @@ export default function DesktopSidebar() {
           </>
         ) : (
           <>
-            {navBtn('activity', <Activity className="w-4 h-4 flex-shrink-0" />, t.sidebar.activity)}
             {navBtn('more', <MoreHorizontal className="w-4 h-4 flex-shrink-0" />, t.sidebar.more)}
           </>
         )}

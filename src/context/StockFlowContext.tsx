@@ -59,6 +59,7 @@ export interface ToastNotification {
 interface StockFlowContextValue {
   currentUser: User;
   isAuthenticated: boolean;
+  isHydrated: boolean;
   login: (role: UserRole, email?: string) => void;
   logout: () => void;
   switchRole: (role: UserRole) => void;
@@ -140,6 +141,14 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
           role: 'warehouse',
           avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=128&auto=format&fit=crop&q=80',
         });
+      } else if (savedRole === 'manager') {
+        setCurrentUser({
+          id: 'usr-1',
+          name: 'Alex Morgan',
+          email: 'alex@stockflow.app',
+          role: 'manager',
+          avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=128&auto=format&fit=crop&q=80',
+        });
       }
     } catch {
       // Ignored
@@ -213,6 +222,7 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
     setSelectedProductId(null);
     try {
       localStorage.removeItem('sf_auth_active');
+      localStorage.removeItem('sf_user_role');
     } catch {
       // Ignored
     }
@@ -514,6 +524,7 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
   const value: StockFlowContextValue = {
     currentUser,
     isAuthenticated,
+    isHydrated,
     login,
     logout,
     switchRole,

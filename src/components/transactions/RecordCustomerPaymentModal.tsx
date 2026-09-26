@@ -147,7 +147,7 @@ function RecordCustomerPaymentContent() {
           <div>
             <div className="flex items-center justify-between mb-1">
               <label htmlFor="payment-amount" className="text-xs font-semibold text-slate-700">
-                {t.payment.amountPaid} ({t.payment.etb}) <span className="text-rose-500">*</span>
+                {t.payment.amountPaid} <span className="text-rose-500">*</span>
               </label>
               {/* Quick Presets */}
               <div className="flex items-center gap-1.5 text-[10px]">

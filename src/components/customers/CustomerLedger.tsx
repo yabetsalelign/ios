@@ -17,9 +17,9 @@ export default function CustomerLedger({ customerId }: CustomerLedgerProps) {
     setActiveModal,
     setPreselectedCustomerId,
   } = useStockFlow();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
-  const [activeSubTab, setActiveSubTab] = useState<'transactions' | 'summary'>('transactions');
+  const [activeSubTab, setActiveSubTab] = useState<'transactions' | 'details'>('transactions');
 
   const customer = customers.find((c) => c.id === customerId);
 
@@ -117,20 +117,8 @@ export default function CustomerLedger({ customerId }: CustomerLedgerProps) {
         </div>
       </div>
 
-      {/* Primary Action Buttons */}
+      {/* Primary Action Buttons: Sell Products is primary, Record Payment is secondary */}
       <div className="grid grid-cols-2 gap-2.5">
-        <button
-          type="button"
-          onClick={() => {
-            setPreselectedCustomerId(customerId);
-            setActiveModal('payment');
-          }}
-          className="py-2.5 px-3 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-transform active:scale-[0.99]"
-        >
-          <CreditCard className="w-3.5 h-3.5" />
-          <span>{t.ledger.recordPayment}</span>
-        </button>
-
         <button
           type="button"
           onClick={() => {
@@ -141,6 +129,18 @@ export default function CustomerLedger({ customerId }: CustomerLedgerProps) {
         >
           <ShoppingBag className="w-3.5 h-3.5" />
           <span>{t.ledger.newSale}</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setPreselectedCustomerId(customerId);
+            setActiveModal('payment');
+          }}
+          className="py-2.5 px-3 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/80 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-transform active:scale-[0.99]"
+        >
+          <CreditCard className="w-3.5 h-3.5 text-slate-500" />
+          <span>{t.ledger.recordPayment}</span>
         </button>
       </div>
 
@@ -159,14 +159,14 @@ export default function CustomerLedger({ customerId }: CustomerLedgerProps) {
         </button>
         <button
           type="button"
-          onClick={() => setActiveSubTab('summary')}
+          onClick={() => setActiveSubTab('details')}
           className={`flex-1 py-1.5 rounded-lg text-center transition-all ${
-            activeSubTab === 'summary'
+            activeSubTab === 'details'
               ? 'bg-white text-slate-900 shadow-xs'
               : 'text-slate-500 hover:text-slate-800'
           }`}
         >
-          {t.ledger.accountSummary}
+          {language === 'am' ? 'ዝርዝር' : 'Details'}
         </button>
       </div>
 
@@ -248,7 +248,7 @@ export default function CustomerLedger({ customerId }: CustomerLedgerProps) {
           </div>
         </div>
       ) : (
-        /* Tab 2: Account Summary & Metadata */
+        /* Tab 2: Account Details & Metadata */
         <div className="bg-white border border-slate-200/70 rounded-2xl p-4 shadow-2xs space-y-3 text-xs">
           <div>
             <h3 className="font-bold text-slate-900 text-sm">Account Profile</h3>

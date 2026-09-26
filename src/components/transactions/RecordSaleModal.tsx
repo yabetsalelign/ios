@@ -295,7 +295,7 @@ function RecordSaleContent() {
 
                       <div>
                         <label className="block text-[10px] font-semibold text-slate-600 mb-0.5">
-                          {t.sale.pricePerCarton} ({t.sale.etb})
+                          {t.sale.pricePerCarton}
                         </label>
                         <input
                           type="number"
@@ -376,7 +376,7 @@ function RecordSaleContent() {
             <div className="grid grid-cols-2 gap-2.5">
               <div>
                 <label htmlFor="amount-paid-input" className="block text-[10px] font-semibold text-slate-600 mb-0.5">
-                  {t.sale.amountPaid} ({t.sale.etb})
+                  {t.sale.amountPaid}
                 </label>
                 <input
                   id="amount-paid-input"

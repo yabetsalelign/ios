@@ -25,6 +25,7 @@ import TransactionSuccessModal from '../transactions/TransactionSuccessModal';
 export default function AppShell() {
   const {
     isAuthenticated,
+    isHydrated,
     activeTab,
     selectedCustomerId,
     currentUser,
@@ -50,13 +51,13 @@ export default function AppShell() {
     );
   }, []);
 
-  if (!isAuthenticated) {
-    return <LoginView />;
+  // Prevent server/client layout mismatch and eliminate login flash during auth hydration
+  if (!mounted || !isHydrated) {
+    return null;
   }
 
-  // Prevent server/client layout mismatch
-  if (!mounted) {
-    return null;
+  if (!isAuthenticated) {
+    return <LoginView />;
   }
 
   const renderCurrentView = () => {
