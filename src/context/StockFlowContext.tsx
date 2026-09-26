@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import {
   Customer,
   CustomerFinancialSummary,
@@ -120,29 +120,32 @@ interface StockFlowContextValue {
 const StockFlowContext = createContext<StockFlowContextValue | undefined>(undefined);
 
 export function StockFlowProvider({ children }: { children: React.ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      const active = localStorage.getItem('sf_auth_active');
-      return active === 'true';
-    }
-    return false;
-  });
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [currentUser, setCurrentUser] = useState<User>(INITIAL_USER);
+  const [isHydrated, setIsHydrated] = useState(false);
 
-  const [currentUser, setCurrentUser] = useState<User>(() => {
-    if (typeof window !== 'undefined') {
+  // Hydrate persisted auth state once on mount (avoids SSR/client mismatch)
+  useEffect(() => {
+    try {
+      const active = localStorage.getItem('sf_auth_active');
       const savedRole = localStorage.getItem('sf_user_role');
+      if (active === 'true') {
+        setIsAuthenticated(true);
+      }
       if (savedRole === 'warehouse') {
-        return {
+        setCurrentUser({
           id: 'usr-2',
           name: 'Dawit Haile',
           email: 'dawit@stockflow.app',
           role: 'warehouse',
           avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=128&auto=format&fit=crop&q=80',
-        };
+        });
       }
+    } catch {
+      // Ignored
     }
-    return INITIAL_USER;
-  });
+    setIsHydrated(true);
+  }, []);
 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
