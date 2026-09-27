@@ -26,8 +26,6 @@ export default function DesktopHeader() {
         return t.customers.title;
       case 'reports':
         return t.reports.title;
-      case 'activity':
-        return t.warehouse.title;
       default:
         return 'StockFlow';
     }

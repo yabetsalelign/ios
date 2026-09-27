@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Home, Package, Users, BarChart3, Plus, MoreHorizontal, ShieldCheck } from 'lucide-react';
+import { Home, Package, Users, BarChart3, Plus, ShieldCheck, User } from 'lucide-react';
 import { ActiveTab, useStockFlow } from '../../context/StockFlowContext';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -88,15 +88,18 @@ export default function DesktopSidebar() {
       <nav className="flex-1 space-y-1" aria-label="Sidebar Navigation">
         {navBtn('home', <Home className="w-4 h-4 flex-shrink-0" />, t.sidebar.dashboard)}
         {navBtn('inventory', <Package className="w-4 h-4 flex-shrink-0" />, t.sidebar.stock)}
+        {navBtn('customers', <Users className="w-4 h-4 flex-shrink-0" />, t.sidebar.customers)}
         {isManager ? (
-          <>
-            {navBtn('customers', <Users className="w-4 h-4 flex-shrink-0" />, t.sidebar.customers)}
-            {navBtn('reports', <BarChart3 className="w-4 h-4 flex-shrink-0" />, t.sidebar.reports)}
-          </>
+          navBtn('reports', <BarChart3 className="w-4 h-4 flex-shrink-0" />, t.sidebar.reports)
         ) : (
-          <>
-            {navBtn('more', <MoreHorizontal className="w-4 h-4 flex-shrink-0" />, t.sidebar.more)}
-          </>
+          <button
+            type="button"
+            onClick={() => setIsProfileOpen(true)}
+            className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+          >
+            <User className="w-4 h-4 flex-shrink-0" />
+            <span className="truncate">{language === 'am' ? 'መገለጫ' : 'Profile'}</span>
+          </button>
         )}
       </nav>
 

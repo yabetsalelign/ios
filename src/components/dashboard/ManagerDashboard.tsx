@@ -22,18 +22,26 @@ export default function ManagerDashboard() {
 
   return (
     <div className="space-y-5">
-      {/* Greeting */}
+      {/* Greeting & Role Badge */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-            {greeting(t)}, {currentUser.name.split(' ')[0]}
-          </h1>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+              {greeting(t)}, {currentUser.name.split(' ')[0]}
+            </h1>
+            <span
+              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
+                isWarehouse
+                  ? 'bg-blue-50 text-blue-800 border-blue-200/80'
+                  : 'bg-emerald-50 text-emerald-800 border-emerald-200/80'
+              }`}
+            >
+              {isWarehouse ? t.sidebar.warehouse : t.sidebar.manager}
+            </span>
+          </div>
           <p className="text-xs text-slate-500 mt-0.5">
             {isWarehouse ? t.dashboard.subtitleWarehouse : t.dashboard.subtitleManager}
           </p>
-        </div>
-        <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-xs flex-shrink-0">
-          <img src={currentUser.avatarUrl} alt={currentUser.name} className="w-full h-full object-cover" />
         </div>
       </div>
 

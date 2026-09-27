@@ -74,12 +74,8 @@ export default function AppShell() {
         return <CustomerList />;
       case 'reports':
         return <ReportsView />;
-      case 'activity':
-        return <WarehouseActivityView />;
-      case 'more':
-        return <WarehouseActivityView />;
       default:
-        return <ManagerDashboard />;
+        return isManager ? <ManagerDashboard /> : <WarehouseActivityView />;
     }
   };
 

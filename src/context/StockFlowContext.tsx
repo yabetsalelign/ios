@@ -39,7 +39,7 @@ import {
 } from '../domain/validation/validators';
 import { generateTransactionReference } from '../domain/transactions/referenceGenerator';
 
-export type ActiveTab = 'home' | 'inventory' | 'customers' | 'reports' | 'activity' | 'more';
+export type ActiveTab = 'home' | 'inventory' | 'customers' | 'reports';
 export type ActiveModal = 'sale' | 'purchase' | 'payment' | 'add_product' | null;
 
 export interface TransactionSuccessFeedback {
@@ -137,7 +137,7 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
         setCurrentUser({
           id: 'usr-2',
           name: 'Dawit Haile',
-          email: 'dawit@stockflow.app',
+          email: 'warehouse@stockflow.app',
           role: 'warehouse',
           avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=128&auto=format&fit=crop&q=80',
         });
@@ -145,7 +145,7 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
         setCurrentUser({
           id: 'usr-1',
           name: 'Alex Morgan',
-          email: 'alex@stockflow.app',
+          email: 'manager@stockflow.app',
           role: 'manager',
           avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=128&auto=format&fit=crop&q=80',
         });
@@ -189,14 +189,14 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
       ? {
           id: 'usr-1',
           name: 'Alex Morgan',
-          email: email || 'alex@stockflow.app',
+          email: email || 'manager@stockflow.app',
           role: 'manager',
           avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=128&auto=format&fit=crop&q=80',
         }
       : {
           id: 'usr-2',
           name: 'Dawit Haile',
-          email: email || 'dawit@stockflow.app',
+          email: email || 'warehouse@stockflow.app',
           role: 'warehouse',
           avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=128&auto=format&fit=crop&q=80',
         };
@@ -230,7 +230,7 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
 
   const switchRole = (role: UserRole) => {
     login(role);
-    if (role === 'warehouse' && (activeTab === 'customers' || activeTab === 'reports')) {
+    if (role === 'warehouse' && activeTab === 'reports') {
       setActiveTab('home');
     }
   };

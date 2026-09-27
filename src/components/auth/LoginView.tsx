@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { Lock, Mail, ArrowRight, Eye, EyeOff } from 'lucide-react';
@@ -33,7 +33,9 @@ export default function LoginView() {
     setIsSubmitting(true);
     await new Promise((r) => setTimeout(r, 350));
 
-    const key = `${email.trim().toLowerCase()}:${password}`;
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPassword = password.trim();
+    const key = `${cleanEmail}:${cleanPassword}`;
     const match = DEMO_CREDENTIALS[key];
 
     if (match) {
