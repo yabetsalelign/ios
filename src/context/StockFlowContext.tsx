@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Customer,
   CustomerFinancialSummary,
@@ -9,15 +9,7 @@ import {
   Product,
   ProductFormInput,
   User,
-  UserRole,
 } from '../types';
-import {
-  INITIAL_CUSTOMERS,
-  INITIAL_INVENTORY_TRANSACTIONS,
-  INITIAL_PRODUCTS,
-  INITIAL_USER,
-  RAW_CUSTOMER_TRANSACTIONS,
-} from '../data/syntheticSeed';
 import {
   calculateCustomerFinancials,
   RawLedgerTransaction,
@@ -42,6 +34,9 @@ import {
 import { generateTransactionReference } from '../domain/transactions/referenceGenerator';
 import { supabase, isSupabaseConfigured } from '../lib/supabase/client';
 import { ProfileRow } from '../lib/supabase/types';
+
+// Blank user — auth state is unauthenticated until Supabase session is established
+const BLANK_USER: User = { id: '', name: '', email: '', role: 'warehouse', avatarUrl: '' };
 
 export type ActiveTab = 'home' | 'inventory' | 'customers' | 'reports';
 export type ActiveModal = 'sale' | 'purchase' | 'payment' | 'add_product' | null;
@@ -131,12 +126,167 @@ const StockFlowContext = createContext<StockFlowContextValue | undefined>(undefi
 
 export function StockFlowProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [currentUser, setCurrentUser] = useState<User>(INITIAL_USER);
+  const [currentUser, setCurrentUser] = useState<User>(BLANK_USER);
   const [isHydrated, setIsHydrated] = useState(false);
 
-  // Hydrate auth state from Supabase session on mount
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<ActiveTab>('home');
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
+  const [activeModal, setActiveModal] = useState<ActiveModal>(null);
+  const [preselectedCustomerId, setPreselectedCustomerId] = useState<string | null>(null);
+  const [preselectedProductId, setPreselectedProductId] = useState<string | null>(null);
+  const [successFeedback, setSuccessFeedback] = useState<TransactionSuccessFeedback | null>(null);
+  const [isPreviewMobileFrame, setIsPreviewMobileFrame] = useState(false);
+  const [toast, setToast] = useState<ToastNotification | null>(null);
+
+  const showToast = useCallback((notification: Omit<ToastNotification, 'id'>) => {
+    setToast({ ...notification, id: `toast-${Date.now()}` });
+    setTimeout(() => setToast(null), 4000);
+  }, []);
+
+  const dismissToast = useCallback(() => {
+    setToast(null);
+  }, []);
+
+  // Runtime data — starts empty; populated from Supabase after authentication
+  const [products, setProducts] = useState<Product[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [rawTransactions, setRawTransactions] = useState<RawLedgerTransaction[]>([]);
+  const [inventoryTransactions, setInventoryTransactions] = useState<InventoryTransaction[]>([]);
+
+  // ==========================================
+  // LOAD REAL DATA FROM SUPABASE
+  // ==========================================
+  const loadSupabaseData = useCallback(async () => {
+    if (!isSupabaseConfigured) return;
+    try {
+      // 1. Products — stock levels come from v_product_stock view
+      const [{ data: productRows }, { data: stockRows }] = await Promise.all([
+        (supabase.from('products') as any).select(
+          'id, name, sku, barcode, description, category, image_url, pieces_per_carton, selling_price_per_carton, cost_per_carton, low_stock_threshold_cartons, created_at'
+        ).order('created_at', { ascending: false }),
+        (supabase.from('v_product_stock') as any).select('product_id, current_stock_cartons'),
+      ]);
+
+      if (productRows) {
+        const stockMap = new Map<string, number>();
+        (stockRows ?? []).forEach((s: any) => stockMap.set(s.product_id, Number(s.current_stock_cartons)));
+        const mapped: Product[] = productRows.map((r: any) => ({
+          id: r.id,
+          name: r.name,
+          sku: r.sku,
+          barcode: r.barcode ?? undefined,
+          description: r.description ?? undefined,
+          category: r.category ?? 'General',
+          image: r.image_url || 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=200&auto=format&fit=crop&q=80',
+          currentStockCartons: stockMap.get(r.id) ?? 0,
+          unit: 'carton' as const,
+          piecesPerCarton: r.pieces_per_carton ?? undefined,
+          sellingPricePerCarton: Number(r.selling_price_per_carton),
+          costPerCarton: Number(r.cost_per_carton),
+          lowStockThresholdCartons: r.low_stock_threshold_cartons ?? 10,
+          createdAt: r.created_at,
+        }));
+        setProducts(mapped);
+      }
+
+      // 2. Customers
+      const { data: customerRows } = await (supabase.from('customers') as any)
+        .select('id, name, phone, address, notes, created_at')
+        .order('name', { ascending: true });
+
+      if (customerRows) {
+        const mapped: Customer[] = customerRows.map((r: any) => ({
+          id: r.id,
+          name: r.name,
+          phone: r.phone ?? '',
+          address: r.address ?? '',
+          notes: r.notes ?? undefined,
+          createdAt: r.created_at,
+        }));
+        setCustomers(mapped);
+      }
+
+      // 3. Ledger transactions (for customer financial summaries)
+      const { data: ledgerRows } = await (supabase.from('ledger_transactions') as any)
+        .select('id, customer_id, reference_number, type, description, amount, payment_method, created_at')
+        .order('created_at', { ascending: true });
+
+      if (ledgerRows) {
+        const mapped: RawLedgerTransaction[] = ledgerRows.map((r: any) => ({
+          id: r.id,
+          customerId: r.customer_id,
+          date: new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+          referenceNumber: r.reference_number,
+          type: r.type as 'Sale' | 'Payment' | 'Adjustment',
+          description: r.description ?? '',
+          amount: Number(r.amount),
+          paymentMethod: r.payment_method ?? undefined,
+          createdAt: r.created_at,
+        }));
+        setRawTransactions(mapped);
+      }
+
+      // 4. Inventory transactions (for logbook / activity feed)
+      const { data: invRows } = await (supabase.from('inventory_transactions') as any)
+        .select('id, reference_number, product_id, type, quantity_cartons, related_sale_id, related_purchase_id, created_at')
+        .order('created_at', { ascending: false })
+        .limit(200);
+
+      if (invRows) {
+        // Build a name lookup from already-loaded products
+        // (products state may not be updated yet in closure; use productRows directly)
+        const nameMap = new Map<string, string>();
+        (productRows ?? []).forEach((p: any) => nameMap.set(p.id, p.name));
+
+        const now = Date.now();
+        const mapped: InventoryTransaction[] = invRows.map((r: any) => {
+          const diff = now - new Date(r.created_at).getTime();
+          const minutes = Math.floor(diff / 60000);
+          const hours = Math.floor(minutes / 60);
+          const days = Math.floor(hours / 24);
+          const timeAgo = days > 0 ? `${days}d ago` : hours > 0 ? `${hours}h ago` : minutes > 0 ? `${minutes}m ago` : 'Just now';
+          return {
+            id: r.id,
+            referenceNumber: r.reference_number,
+            productId: r.product_id,
+            productName: nameMap.get(r.product_id) ?? r.product_id,
+            type: r.type as 'purchase' | 'sale' | 'adjustment',
+            quantityCartons: Number(r.quantity_cartons),
+            relatedSaleId: r.related_sale_id ?? undefined,
+            relatedPurchaseId: r.related_purchase_id ?? undefined,
+            timeAgo,
+            createdAt: r.created_at,
+          };
+        });
+        setInventoryTransactions(mapped);
+      }
+    } catch (err) {
+      console.error('Failed to load Supabase runtime data:', err);
+    }
+  }, []);
+
+  // ==========================================
+  // AUTH STATE HYDRATION
+  // ==========================================
   useEffect(() => {
     let isMounted = true;
+
+    const applyProfile = (profile: ProfileRow, email: string) => {
+      if (!isMounted) return;
+      setCurrentUser({
+        id: profile.id,
+        name: profile.full_name,
+        email,
+        role: profile.role,
+        avatarUrl: profile.avatar_url || (profile.role === 'manager'
+          ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=128&auto=format&fit=crop&q=80'
+          : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=128&auto=format&fit=crop&q=80'),
+      });
+      setIsAuthenticated(true);
+    };
 
     const initAuth = async () => {
       try {
@@ -151,17 +301,9 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
             .eq('id', session.user.id)
             .single()) as { data: ProfileRow | null; error: any };
 
-          if (profile && isMounted) {
-            setCurrentUser({
-              id: profile.id,
-              name: profile.full_name,
-              email: session.user.email || '',
-              role: profile.role,
-              avatarUrl: profile.avatar_url || (profile.role === 'manager'
-                ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=128&auto=format&fit=crop&q=80'
-                : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=128&auto=format&fit=crop&q=80'),
-            });
-            setIsAuthenticated(true);
+          if (profile) {
+            applyProfile(profile, session.user.email || '');
+            await loadSupabaseData();
           } else if (profileError) {
             console.error('Error loading profile during session restore:', profileError);
           }
@@ -186,24 +328,21 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
             .eq('id', session.user.id)
             .single()) as { data: ProfileRow | null; error: any };
 
-          if (profile && isMounted) {
-            setCurrentUser({
-              id: profile.id,
-              name: profile.full_name,
-              email: session.user.email || '',
-              role: profile.role,
-              avatarUrl: profile.avatar_url || (profile.role === 'manager'
-                ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=128&auto=format&fit=crop&q=80'
-                : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=128&auto=format&fit=crop&q=80'),
-            });
-            setIsAuthenticated(true);
+          if (profile) {
+            applyProfile(profile, session.user.email || '');
+            await loadSupabaseData();
           }
         } catch (err) {
           console.error('Failed to load profile on auth change:', err);
         }
       } else if (event === 'SIGNED_OUT') {
+        // Clear all runtime data on sign-out
         setIsAuthenticated(false);
-        setCurrentUser(INITIAL_USER);
+        setCurrentUser(BLANK_USER);
+        setProducts([]);
+        setCustomers([]);
+        setRawTransactions([]);
+        setInventoryTransactions([]);
       }
     });
 
@@ -211,35 +350,7 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, []);
-
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<ActiveTab>('home');
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
-  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
-  const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
-  const [activeModal, setActiveModal] = useState<ActiveModal>(null);
-  const [preselectedCustomerId, setPreselectedCustomerId] = useState<string | null>(null);
-  const [preselectedProductId, setPreselectedProductId] = useState<string | null>(null);
-  const [successFeedback, setSuccessFeedback] = useState<TransactionSuccessFeedback | null>(null);
-  const [isPreviewMobileFrame, setIsPreviewMobileFrame] = useState(false);
-  const [toast, setToast] = useState<ToastNotification | null>(null);
-
-  const showToast = React.useCallback((notification: Omit<ToastNotification, 'id'>) => {
-    setToast({ ...notification, id: `toast-${Date.now()}` });
-    // Auto-dismiss after 4 seconds
-    setTimeout(() => setToast(null), 4000);
-  }, []);
-
-  const dismissToast = React.useCallback(() => {
-    setToast(null);
-  }, []);
-
-  // Dynamic In-Memory Collections (Ready for Supabase repository integration)
-  const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
-  const [customers] = useState<Customer[]>(INITIAL_CUSTOMERS);
-  const [rawTransactions, setRawTransactions] = useState<RawLedgerTransaction[]>(RAW_CUSTOMER_TRANSACTIONS);
-  const [inventoryTransactions, setInventoryTransactions] = useState<InventoryTransaction[]>(INITIAL_INVENTORY_TRANSACTIONS);
+  }, [loadSupabaseData]);
 
   const login = async (email: string, password?: string): Promise<{ success: boolean; error?: string }> => {
     const cleanEmail = email.trim().toLowerCase();
@@ -283,6 +394,8 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
       setActiveTab('home');
       setSelectedCustomerId(null);
       setSelectedProductId(null);
+      // Load real Supabase data immediately after successful login
+      await loadSupabaseData();
       return { success: true };
     } catch (err: any) {
       return { success: false, error: err.message || 'Authentication error' };
@@ -295,8 +408,8 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       console.error('Sign out error:', err);
     }
-    setIsAuthenticated(false);
-    setCurrentUser(INITIAL_USER);
+    // Runtime data is cleared by the SIGNED_OUT listener above.
+    // Reset UI state here.
     setIsProfileOpen(false);
     setActiveTab('home');
     setSelectedCustomerId(null);
