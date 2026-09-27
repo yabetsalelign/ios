@@ -38,7 +38,7 @@ export default function BottomNavigation() {
           onClick={() => handleTabClick('home')}
           aria-label={t.nav.home}
           aria-current={activeTab === 'home' && !isProfileOpen ? 'page' : undefined}
-          className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors min-w-0 ${
+          className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors min-w-0 active:scale-95 transition-transform duration-100 ease-in-out touch-manipulation ${
             activeTab === 'home' && !isProfileOpen ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
           }`}
         >
@@ -54,7 +54,7 @@ export default function BottomNavigation() {
           onClick={() => handleTabClick('inventory')}
           aria-label={t.nav.stock}
           aria-current={activeTab === 'inventory' && !isProfileOpen ? 'page' : undefined}
-          className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors min-w-0 ${
+          className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors min-w-0 active:scale-95 transition-transform duration-100 ease-in-out touch-manipulation ${
             activeTab === 'inventory' && !isProfileOpen ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
           }`}
         >
@@ -70,7 +70,7 @@ export default function BottomNavigation() {
             type="button"
             onClick={() => setIsQuickActionOpen(true)}
             aria-label={t.nav.recordAction}
-            className="absolute -top-5 w-[52px] h-[52px] bg-slate-900 text-white rounded-full flex items-center justify-center shadow-lg shadow-slate-900/30 active:scale-95 transition-transform hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-900/20"
+            className="absolute -top-5 w-[52px] h-[52px] bg-slate-900 text-white rounded-full flex items-center justify-center shadow-lg shadow-slate-900/30 hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-900/20 active:scale-95 transition-transform duration-100 ease-in-out touch-manipulation"
           >
             <Plus className="w-6 h-6 stroke-[2.5px]" />
           </button>
@@ -82,7 +82,7 @@ export default function BottomNavigation() {
           onClick={() => handleTabClick('customers')}
           aria-label={t.nav.customers}
           aria-current={activeTab === 'customers' && !isProfileOpen ? 'page' : undefined}
-          className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors min-w-0 ${
+          className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors min-w-0 active:scale-95 transition-transform duration-100 ease-in-out touch-manipulation ${
             activeTab === 'customers' && !isProfileOpen ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
           }`}
         >
@@ -99,7 +99,7 @@ export default function BottomNavigation() {
             onClick={() => handleTabClick('reports')}
             aria-label={t.nav.reports}
             aria-current={activeTab === 'reports' && !isProfileOpen ? 'page' : undefined}
-            className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors min-w-0 ${
+            className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors min-w-0 active:scale-95 transition-transform duration-100 ease-in-out touch-manipulation ${
               activeTab === 'reports' && !isProfileOpen ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
             }`}
           >
@@ -114,7 +114,7 @@ export default function BottomNavigation() {
             onClick={() => setIsProfileOpen(true)}
             aria-label={language === 'am' ? 'መገለጫ' : 'Profile'}
             aria-current={isProfileOpen ? 'page' : undefined}
-            className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors min-w-0 ${
+            className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors min-w-0 active:scale-95 transition-transform duration-100 ease-in-out touch-manipulation ${
               isProfileOpen ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
             }`}
           >

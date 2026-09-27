@@ -21,6 +21,11 @@ export default function LoginView() {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const fillCredentials = (em: string, pass: string) => {
+    setEmail(em);
+    setPassword(pass);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -117,11 +122,35 @@ export default function LoginView() {
             </button>
           </form>
 
-          <div className="mt-6 pt-5 border-t border-slate-100">
-            <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2.5 text-center">{language === 'am' ? 'ሙከራ መረጃ' : 'Demo credentials'}</p>
-            <div className="space-y-2 text-[11px] bg-slate-50 rounded-xl p-3">
-              <div className="flex justify-between items-center"><span className="font-semibold text-slate-700">Manager:</span><span className="font-mono text-slate-500">manager@stockflow.app / manager123</span></div>
-              <div className="flex justify-between items-center"><span className="font-semibold text-slate-700">Warehouse:</span><span className="font-mono text-slate-500">warehouse@stockflow.app / warehouse123</span></div>
+          <div className="mt-6 pt-4 border-t border-slate-100">
+            <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase text-center mb-3">
+              {language === 'am' ? 'ሙከራ መረጃ' : 'Demo Credentials'}
+            </p>
+
+            <div className="space-y-1.5 text-xs text-slate-600 bg-slate-50 p-3 rounded-xl">
+              <button
+                type="button"
+                onClick={() => fillCredentials('manager@stockflow.app', 'manager123')}
+                className="w-full flex items-center justify-between gap-1 text-[11px] hover:bg-slate-100 rounded-lg px-1 py-0.5 transition-colors text-left"
+                aria-label="Fill manager credentials"
+              >
+                <span className="font-medium text-slate-500 min-w-[65px] shrink-0">Manager:</span>
+                <code className="bg-white px-1.5 py-0.5 rounded border border-slate-200 text-slate-700 truncate min-w-0">
+                  manager@stockflow.app / manager123
+                </code>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => fillCredentials('warehouse@stockflow.app', 'warehouse123')}
+                className="w-full flex items-center justify-between gap-1 text-[11px] hover:bg-slate-100 rounded-lg px-1 py-0.5 transition-colors text-left"
+                aria-label="Fill warehouse credentials"
+              >
+                <span className="font-medium text-slate-500 min-w-[65px] shrink-0">Warehouse:</span>
+                <code className="bg-white px-1.5 py-0.5 rounded border border-slate-200 text-slate-700 truncate min-w-0">
+                  warehouse@stockflow.app / warehouse123
+                </code>
+              </button>
             </div>
           </div>
         </div>
@@ -133,3 +162,4 @@ export default function LoginView() {
     </div>
   );
 }
+

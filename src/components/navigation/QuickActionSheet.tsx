@@ -69,7 +69,7 @@ export default function QuickActionSheet() {
             <button
               type="button"
               onClick={() => handleSelectAction('sale')}
-              className="w-full text-left p-4 rounded-2xl border border-slate-100 bg-slate-50/60 hover:bg-blue-50/50 hover:border-blue-200 transition-all flex items-center gap-4 group active:scale-[0.99]"
+              className="w-full text-left p-4 rounded-2xl border border-slate-100 bg-slate-50/60 hover:bg-blue-50/50 hover:border-blue-200 flex items-center gap-4 group active:scale-95 transition-transform duration-100 ease-in-out touch-manipulation"
             >
               <div className="w-11 h-11 rounded-xl bg-blue-100/80 text-blue-600 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
                 <ShoppingBag className="w-5 h-5 stroke-[2.2px]" />
@@ -85,7 +85,7 @@ export default function QuickActionSheet() {
           <button
             type="button"
             onClick={() => handleSelectAction('purchase')}
-            className="w-full text-left p-4 rounded-2xl border border-slate-100 bg-slate-50/60 hover:bg-emerald-50/50 hover:border-emerald-200 transition-all flex items-center gap-4 group active:scale-[0.99]"
+            className="w-full text-left p-4 rounded-2xl border border-slate-100 bg-slate-50/60 hover:bg-emerald-50/50 hover:border-emerald-200 flex items-center gap-4 group active:scale-95 transition-transform duration-100 ease-in-out touch-manipulation"
           >
             <div className="w-11 h-11 rounded-xl bg-emerald-100/80 text-emerald-700 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
               <PlusCircle className="w-5 h-5 stroke-[2.2px]" />
@@ -101,7 +101,7 @@ export default function QuickActionSheet() {
             <button
               type="button"
               onClick={() => handleSelectAction('payment')}
-              className="w-full text-left p-4 rounded-2xl border border-slate-100 bg-slate-50/60 hover:bg-amber-50/50 hover:border-amber-200 transition-all flex items-center gap-4 group active:scale-[0.99]"
+              className="w-full text-left p-4 rounded-2xl border border-slate-100 bg-slate-50/60 hover:bg-amber-50/50 hover:border-amber-200 flex items-center gap-4 group active:scale-95 transition-transform duration-100 ease-in-out touch-manipulation"
             >
               <div className="w-11 h-11 rounded-xl bg-amber-100/80 text-amber-700 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
                 <CreditCard className="w-5 h-5 stroke-[2.2px]" />
