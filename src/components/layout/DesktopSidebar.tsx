@@ -7,7 +7,7 @@ import { useLanguage } from '../../context/LanguageContext';
 
 export default function DesktopSidebar() {
   const {
-    activeTab, setActiveTab, currentUser, switchRole,
+    activeTab, setActiveTab, currentUser,
     setIsQuickActionOpen, setSelectedCustomerId, setSelectedProductId,
     setIsProfileOpen,
   } = useStockFlow();

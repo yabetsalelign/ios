@@ -10,7 +10,6 @@ export default function ProfileModal() {
     isProfileOpen,
     setIsProfileOpen,
     currentUser,
-    switchRole,
     logout,
     isPreviewMobileFrame,
     setIsPreviewMobileFrame,
@@ -93,39 +92,6 @@ export default function ProfileModal() {
           <p className="text-slate-600 leading-relaxed text-[11px]">
             {isManager ? t.profile.managerScope : t.profile.warehouseScope}
           </p>
-        </div>
-
-        {/* Quick Role Switcher */}
-        <div className="mt-4 p-3.5 rounded-2xl border border-slate-200/80 bg-white">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-slate-900">{t.profile.switchRole}</span>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => switchRole('manager')}
-              className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 ${
-                isManager
-                  ? 'bg-slate-900 text-white border-slate-900 shadow-2xs'
-                  : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
-              }`}
-            >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>{t.sidebar.manager}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => switchRole('warehouse')}
-              className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 ${
-                !isManager
-                  ? 'bg-slate-900 text-white border-slate-900 shadow-2xs'
-                  : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
-              }`}
-            >
-              <Package className="w-3.5 h-3.5" />
-              <span>{t.sidebar.warehouse}</span>
-            </button>
-          </div>
         </div>
 
         {/* Language Preference */}

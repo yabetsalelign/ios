@@ -6,11 +6,6 @@ import { useStockFlow } from '../../context/StockFlowContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { UserRole } from '../../types';
 
-const DEMO_CREDENTIALS: Record<string, { role: UserRole; email: string }> = {
-  'manager@stockflow.app:manager123': { role: 'manager', email: 'manager@stockflow.app' },
-  'warehouse@stockflow.app:warehouse123': { role: 'warehouse', email: 'warehouse@stockflow.app' },
-};
-
 export default function LoginView() {
   const { login } = useStockFlow();
   const { language, setLanguage } = useLanguage();
@@ -36,17 +31,18 @@ export default function LoginView() {
     }
 
     setIsSubmitting(true);
-    await new Promise((r) => setTimeout(r, 350));
 
     const cleanEmail = email.trim().toLowerCase();
     const cleanPassword = password.trim();
-    const key = `${cleanEmail}:${cleanPassword}`;
-    const match = DEMO_CREDENTIALS[key];
 
-    if (match) {
-      login(match.role, match.email);
-    } else {
-      setError(language === 'am' ? 'ኢሜይሉ ወይም የይለፍ ቃሉ ትክክለኛ አይደለም።' : 'Incorrect email or password. Please try again.');
+    const result = await login(cleanEmail, cleanPassword);
+    if (!result?.success) {
+      setError(
+        result?.error ||
+        (language === 'am'
+          ? 'ኢሜይሉ ወይም የይለፍ ቃሉ ትክክለኛ አይደለም።'
+          : 'Incorrect email or password. Please try again.')
+      );
       setIsSubmitting(false);
     }
   };

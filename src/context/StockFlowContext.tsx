@@ -38,6 +38,8 @@ import {
   validateSale,
 } from '../domain/validation/validators';
 import { generateTransactionReference } from '../domain/transactions/referenceGenerator';
+import { supabase, isSupabaseConfigured } from '../lib/supabase/client';
+import { ProfileRow } from '../lib/supabase/types';
 
 export type ActiveTab = 'home' | 'inventory' | 'customers' | 'reports';
 export type ActiveModal = 'sale' | 'purchase' | 'payment' | 'add_product' | null;
@@ -60,8 +62,8 @@ interface StockFlowContextValue {
   currentUser: User;
   isAuthenticated: boolean;
   isHydrated: boolean;
-  login: (role: UserRole, email?: string) => void;
-  logout: () => void;
+  login: (email: string, password?: string) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void> | void;
   switchRole: (role: UserRole) => void;
   isProfileOpen: boolean;
   setIsProfileOpen: (open: boolean) => void;
@@ -125,35 +127,80 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User>(INITIAL_USER);
   const [isHydrated, setIsHydrated] = useState(false);
 
-  // Hydrate persisted auth state once on mount (avoids SSR/client mismatch)
+  // Hydrate auth state from Supabase session on mount
   useEffect(() => {
-    try {
-      const active = localStorage.getItem('sf_auth_active');
-      const savedRole = localStorage.getItem('sf_user_role');
-      if (active === 'true') {
-        setIsAuthenticated(true);
+    let isMounted = true;
+
+    const initAuth = async () => {
+      try {
+        if (isSupabaseConfigured) {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user && isMounted) {
+            const { data: profile } = (await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', session.user.id)
+              .single()) as { data: ProfileRow | null; error: any };
+
+            if (profile && isMounted) {
+              setCurrentUser({
+                id: profile.id,
+                name: profile.full_name,
+                email: session.user.email || '',
+                role: profile.role,
+                avatarUrl: profile.avatar_url || (profile.role === 'manager'
+                  ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=128&auto=format&fit=crop&q=80'
+                  : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=128&auto=format&fit=crop&q=80'),
+              });
+              setIsAuthenticated(true);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error during Supabase session initialization:', err);
+      } finally {
+        if (isMounted) setIsHydrated(true);
       }
-      if (savedRole === 'warehouse') {
-        setCurrentUser({
-          id: 'usr-2',
-          name: 'Dawit Haile',
-          email: 'warehouse@stockflow.app',
-          role: 'warehouse',
-          avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=128&auto=format&fit=crop&q=80',
-        });
-      } else if (savedRole === 'manager') {
-        setCurrentUser({
-          id: 'usr-1',
-          name: 'Alex Morgan',
-          email: 'manager@stockflow.app',
-          role: 'manager',
-          avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=128&auto=format&fit=crop&q=80',
-        });
+    };
+
+    initAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!isMounted) return;
+
+      if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session?.user) {
+        try {
+          const { data: profile } = (await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single()) as { data: ProfileRow | null; error: any };
+
+          if (profile && isMounted) {
+            setCurrentUser({
+              id: profile.id,
+              name: profile.full_name,
+              email: session.user.email || '',
+              role: profile.role,
+              avatarUrl: profile.avatar_url || (profile.role === 'manager'
+                ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=128&auto=format&fit=crop&q=80'
+                : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=128&auto=format&fit=crop&q=80'),
+            });
+            setIsAuthenticated(true);
+          }
+        } catch (err) {
+          console.error('Failed to load profile on auth change:', err);
+        }
+      } else if (event === 'SIGNED_OUT') {
+        setIsAuthenticated(false);
+        setCurrentUser(INITIAL_USER);
       }
-    } catch {
-      // Ignored
-    }
-    setIsHydrated(true);
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -184,52 +231,109 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
   const [rawTransactions, setRawTransactions] = useState<RawLedgerTransaction[]>(RAW_CUSTOMER_TRANSACTIONS);
   const [inventoryTransactions, setInventoryTransactions] = useState<InventoryTransaction[]>(INITIAL_INVENTORY_TRANSACTIONS);
 
-  const login = (role: UserRole, email?: string) => {
-    const user: User = role === 'manager'
-      ? {
-          id: 'usr-1',
-          name: 'Alex Morgan',
-          email: email || 'manager@stockflow.app',
-          role: 'manager',
-          avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=128&auto=format&fit=crop&q=80',
-        }
-      : {
-          id: 'usr-2',
-          name: 'Dawit Haile',
-          email: email || 'warehouse@stockflow.app',
-          role: 'warehouse',
-          avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=128&auto=format&fit=crop&q=80',
-        };
+  const login = async (email: string, password?: string): Promise<{ success: boolean; error?: string }> => {
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPassword = password?.trim() || '';
 
-    setCurrentUser(user);
-    setIsAuthenticated(true);
-    setActiveTab('home');
-    setSelectedCustomerId(null);
-    setSelectedProductId(null);
-    try {
-      localStorage.setItem('sf_auth_active', 'true');
-      localStorage.setItem('sf_user_role', role);
-    } catch {
-      // Ignored
+    // If Supabase is configured with real URL/key, authenticate via Supabase Auth
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: cleanEmail,
+          password: cleanPassword,
+        });
+
+        if (error) {
+          return { success: false, error: error.message };
+        }
+
+        if (data.user) {
+          // Role comes ONLY from profiles.role in Supabase
+          const { data: profile, error: profileErr } = (await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', data.user.id)
+            .single()) as { data: ProfileRow | null; error: any };
+
+          if (profileErr || !profile) {
+            return { success: false, error: 'User profile not found in database.' };
+          }
+
+          setCurrentUser({
+            id: profile.id,
+            name: profile.full_name,
+            email: data.user.email || cleanEmail,
+            role: profile.role,
+            avatarUrl: profile.avatar_url || (profile.role === 'manager'
+              ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=128&auto=format&fit=crop&q=80'
+              : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=128&auto=format&fit=crop&q=80'),
+          });
+          setIsAuthenticated(true);
+          setActiveTab('home');
+          setSelectedCustomerId(null);
+          setSelectedProductId(null);
+          return { success: true };
+        }
+      } catch (err: any) {
+        return { success: false, error: err.message || 'Authentication error' };
+      }
     }
+
+    // Development mode fallback when Supabase cloud credentials are not yet configured:
+    // Resolve profile record corresponding to the standard account:
+    if (cleanEmail === 'manager@stockflow.app' && cleanPassword === 'manager123') {
+      setCurrentUser({
+        id: 'a0000000-0000-0000-0000-000000000001',
+        name: 'Alex Morgan',
+        email: 'manager@stockflow.app',
+        role: 'manager',
+        avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=128&auto=format&fit=crop&q=80',
+      });
+      setIsAuthenticated(true);
+      setActiveTab('home');
+      setSelectedCustomerId(null);
+      setSelectedProductId(null);
+      return { success: true };
+    }
+
+    if (cleanEmail === 'warehouse@stockflow.app' && cleanPassword === 'warehouse123') {
+      setCurrentUser({
+        id: 'a0000000-0000-0000-0000-000000000002',
+        name: 'Dawit Haile',
+        email: 'warehouse@stockflow.app',
+        role: 'warehouse',
+        avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=128&auto=format&fit=crop&q=80',
+      });
+      setIsAuthenticated(true);
+      setActiveTab('home');
+      setSelectedCustomerId(null);
+      setSelectedProductId(null);
+      return { success: true };
+    }
+
+    return {
+      success: false,
+      error: 'Invalid credentials. Expected manager@stockflow.app or warehouse@stockflow.app.'
+    };
   };
 
-  const logout = () => {
+  const logout = async () => {
+    if (isSupabaseConfigured) {
+      await supabase.auth.signOut().catch(() => {});
+    }
     setIsAuthenticated(false);
     setIsProfileOpen(false);
     setActiveTab('home');
     setSelectedCustomerId(null);
     setSelectedProductId(null);
-    try {
-      localStorage.removeItem('sf_auth_active');
-      localStorage.removeItem('sf_user_role');
-    } catch {
-      // Ignored
-    }
   };
 
   const switchRole = (role: UserRole) => {
-    login(role);
+    if (role === 'warehouse') {
+      login('warehouse@stockflow.app', 'warehouse123');
+    } else {
+      login('manager@stockflow.app', 'manager123');
+    }
     if (role === 'warehouse' && activeTab === 'reports') {
       setActiveTab('home');
     }
@@ -295,9 +399,9 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
   // TRANSACTION WORKFLOW 1: RECORD SALE
   // ==========================================
   const executeSale = async (input: SaleFormInput) => {
-    // 1. Role permission enforcement
-    if (currentUser.role !== 'manager') {
-      return { success: false, validationErrors: { general: 'Unauthorized: Only Managers can record sales.' } };
+    // 1. Role permission enforcement (Manager and Warehouse can record Stock Out / sales)
+    if (currentUser.role !== 'manager' && currentUser.role !== 'warehouse') {
+      return { success: false, validationErrors: { general: 'Unauthorized: Only Managers and Warehouse staff can record sales.' } };
     }
 
     // 2. Build stock lookup map for pure validator
