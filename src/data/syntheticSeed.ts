@@ -16,11 +16,11 @@ import {
  */
 
 export const INITIAL_USER: User = {
-  id: 'usr-1',
-  name: 'Alex Morgan',
-  email: 'alex@stockflow.app',
-  role: 'manager',
-  avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=128&auto=format&fit=crop&q=80',
+  id: '',
+  name: '',
+  email: '',
+  role: 'warehouse',
+  avatarUrl: '',
 };
 
 export const INITIAL_PRODUCTS: Product[] = [

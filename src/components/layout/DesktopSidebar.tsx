@@ -54,7 +54,7 @@ export default function DesktopSidebar() {
       </div>
 
       {/* Active Role Indicator Card */}
-      <div className="mb-4 p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
+      <div className="mb-4 p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center">
         <div className="flex items-center gap-2">
           {isManager ? (
             <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0" />
@@ -65,13 +65,6 @@ export default function DesktopSidebar() {
             {isManager ? t.sidebar.manager : t.sidebar.warehouse}
           </span>
         </div>
-        <button
-          type="button"
-          onClick={() => setIsProfileOpen(true)}
-          className="text-[11px] font-semibold text-blue-600 hover:text-blue-700"
-        >
-          {t.common.search === 'ፈልግ' ? 'ቀይር' : 'Switch'}
-        </button>
       </div>
 
       {/* Quick Action Button */}

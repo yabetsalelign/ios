@@ -66,7 +66,6 @@ interface StockFlowContextValue {
   isHydrated: boolean;
   login: (email: string, password?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void> | void;
-  switchRole: (role: UserRole) => void;
   isProfileOpen: boolean;
   setIsProfileOpen: (open: boolean) => void;
   activeTab: ActiveTab;
@@ -141,27 +140,30 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
 
     const initAuth = async () => {
       try {
-        if (isSupabaseConfigured) {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session?.user && isMounted) {
-            const { data: profile } = (await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', session.user.id)
-              .single()) as { data: ProfileRow | null; error: any };
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) {
+          console.error('Error fetching Supabase session:', sessionError);
+        }
+        if (session?.user && isMounted) {
+          const { data: profile, error: profileError } = (await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single()) as { data: ProfileRow | null; error: any };
 
-            if (profile && isMounted) {
-              setCurrentUser({
-                id: profile.id,
-                name: profile.full_name,
-                email: session.user.email || '',
-                role: profile.role,
-                avatarUrl: profile.avatar_url || (profile.role === 'manager'
-                  ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=128&auto=format&fit=crop&q=80'
-                  : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=128&auto=format&fit=crop&q=80'),
-              });
-              setIsAuthenticated(true);
-            }
+          if (profile && isMounted) {
+            setCurrentUser({
+              id: profile.id,
+              name: profile.full_name,
+              email: session.user.email || '',
+              role: profile.role,
+              avatarUrl: profile.avatar_url || (profile.role === 'manager'
+                ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=128&auto=format&fit=crop&q=80'
+                : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=128&auto=format&fit=crop&q=80'),
+            });
+            setIsAuthenticated(true);
+          } else if (profileError) {
+            console.error('Error loading profile during session restore:', profileError);
           }
         }
       } catch (err) {
@@ -243,108 +245,62 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
     const cleanEmail = email.trim().toLowerCase();
     const cleanPassword = password?.trim() || '';
 
-    // If Supabase is configured with real URL/key, authenticate via Supabase Auth
-    if (isSupabaseConfigured) {
-      try {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: cleanEmail,
-          password: cleanPassword,
-        });
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: cleanEmail,
+        password: cleanPassword,
+      });
 
-        if (error) {
-          return { success: false, error: error.message };
-        }
-
-        if (data.user) {
-          // Role comes ONLY from profiles.role in Supabase
-          const { data: profile, error: profileErr } = (await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', data.user.id)
-            .single()) as { data: ProfileRow | null; error: any };
-
-          if (profileErr || !profile) {
-            return { success: false, error: 'User profile not found in database.' };
-          }
-
-          setCurrentUser({
-            id: profile.id,
-            name: profile.full_name,
-            email: data.user.email || cleanEmail,
-            role: profile.role,
-            avatarUrl: profile.avatar_url || (profile.role === 'manager'
-              ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=128&auto=format&fit=crop&q=80'
-              : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=128&auto=format&fit=crop&q=80'),
-          });
-          setIsAuthenticated(true);
-          setActiveTab('home');
-          setSelectedCustomerId(null);
-          setSelectedProductId(null);
-          return { success: true };
-        }
-      } catch (err: any) {
-        return { success: false, error: err.message || 'Authentication error' };
+      if (error) {
+        return { success: false, error: error.message };
       }
-    }
 
-    // Development mode fallback when Supabase cloud credentials are not yet configured:
-    // Resolve profile record corresponding to the standard account:
-    if (cleanEmail === 'manager@stockflow.app' && cleanPassword === 'manager123') {
+      if (!data.user) {
+        return { success: false, error: 'Authentication failed: No user returned.' };
+      }
+
+      // Role comes ONLY from profiles.role in Supabase
+      const { data: profile, error: profileErr } = (await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', data.user.id)
+        .single()) as { data: ProfileRow | null; error: any };
+
+      if (profileErr || !profile) {
+        return { success: false, error: 'User profile not found in database.' };
+      }
+
       setCurrentUser({
-        id: 'a0000000-0000-0000-0000-000000000001',
-        name: 'Alex Morgan',
-        email: 'manager@stockflow.app',
-        role: 'manager',
-        avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=128&auto=format&fit=crop&q=80',
+        id: profile.id,
+        name: profile.full_name,
+        email: data.user.email || cleanEmail,
+        role: profile.role,
+        avatarUrl: profile.avatar_url || (profile.role === 'manager'
+          ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=128&auto=format&fit=crop&q=80'
+          : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=128&auto=format&fit=crop&q=80'),
       });
       setIsAuthenticated(true);
       setActiveTab('home');
       setSelectedCustomerId(null);
       setSelectedProductId(null);
       return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Authentication error' };
     }
-
-    if (cleanEmail === 'warehouse@stockflow.app' && cleanPassword === 'warehouse123') {
-      setCurrentUser({
-        id: 'a0000000-0000-0000-0000-000000000002',
-        name: 'Dawit Haile',
-        email: 'warehouse@stockflow.app',
-        role: 'warehouse',
-        avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=128&auto=format&fit=crop&q=80',
-      });
-      setIsAuthenticated(true);
-      setActiveTab('home');
-      setSelectedCustomerId(null);
-      setSelectedProductId(null);
-      return { success: true };
-    }
-
-    return {
-      success: false,
-      error: 'Invalid credentials. Expected manager@stockflow.app or warehouse@stockflow.app.'
-    };
   };
 
   const logout = async () => {
-    if (isSupabaseConfigured) {
-      await supabase.auth.signOut().catch(() => {});
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error('Sign out error:', err);
     }
     setIsAuthenticated(false);
+    setCurrentUser(INITIAL_USER);
     setIsProfileOpen(false);
     setActiveTab('home');
     setSelectedCustomerId(null);
     setSelectedProductId(null);
-  };
-
-  const switchRole = (role: UserRole) => {
-    if (role === 'warehouse') {
-      login('warehouse@stockflow.app', 'warehouse123');
-    } else {
-      login('manager@stockflow.app', 'manager123');
-    }
-    if (role === 'warehouse' && activeTab === 'reports') {
-      setActiveTab('home');
-    }
   };
 
   const getCustomerLedgerData = (customerId: string) => {
@@ -990,7 +946,6 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
     isHydrated,
     login,
     logout,
-    switchRole,
     isProfileOpen,
     setIsProfileOpen,
     activeTab,
