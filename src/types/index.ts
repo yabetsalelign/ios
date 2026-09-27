@@ -12,6 +12,8 @@ export interface Product {
   id: string;
   name: string;
   sku: string;
+  barcode?: string;
+  description?: string;
   image: string;
   category: string;
   currentStockCartons: number; // Primary unit is CARTONS
@@ -21,6 +23,19 @@ export interface Product {
   costPerCarton: number;
   lowStockThresholdCartons: number;
   createdAt: string;
+}
+
+export interface ProductFormInput {
+  name: string;
+  sku: string;
+  barcode?: string;
+  description?: string;
+  category?: string;
+  image?: string;
+  piecesPerCarton?: number;
+  sellingPricePerCarton: number;
+  costPerCarton: number;
+  lowStockThresholdCartons?: number;
 }
 
 export interface Customer {

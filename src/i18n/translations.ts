@@ -149,6 +149,9 @@ export interface Translations {
     sellingPrice: string;
     costPrice: string;
     addStock: string;
+    editProduct: string;
+    barcode: string;
+    description: string;
     scanTitle: string;
     scanHint: string;
     scanDone: string;
@@ -307,10 +310,34 @@ export interface Translations {
     etb: string;
   };
 
-  // ── Add Product Scaffold ──────────────────────────────────────
+  // ── Add Product / Edit Product ────────────────────────────────
   addProduct: {
     title: string;
     subtitle: string;
+    editTitle: string;
+    editSubtitle: string;
+    name: string;
+    namePlaceholder: string;
+    sku: string;
+    skuPlaceholder: string;
+    barcode: string;
+    barcodePlaceholder: string;
+    description: string;
+    descriptionPlaceholder: string;
+    category: string;
+    categoryPlaceholder: string;
+    photo: string;
+    uploadPhoto: string;
+    changePhoto: string;
+    piecesPerCarton: string;
+    sellingPrice: string;
+    costPrice: string;
+    lowStockThreshold: string;
+    unitCarton: string;
+    submit: string;
+    submitEdit: string;
+    submitting: string;
+    cancel: string;
     comingSoon: string;
     comingSoonDetail: string;
     gotIt: string;
@@ -363,6 +390,12 @@ export interface Translations {
     paymentExceedsBalance: (balance: number) => string;
     costNegative: string;
     unauthorized: string;
+    productNameRequired: string;
+    skuRequired: string;
+    skuDuplicate: string;
+    barcodeDuplicate: string;
+    piecesPositiveInteger: string;
+    thresholdNonNegativeInteger: string;
   };
 
   // ── Common ────────────────────────────────────────────────────
@@ -518,6 +551,9 @@ export const en: Translations = {
     sellingPrice: 'Selling Price / Carton',
     costPrice: 'Cost Price / Carton',
     addStock: 'Add Stock',
+    editProduct: 'Edit Product',
+    barcode: 'Barcode',
+    description: 'Description',
     scanTitle: 'Scan barcode',
     scanHint: 'Place the product barcode in the frame to open its stock details.',
     scanDone: 'Done',
@@ -664,7 +700,31 @@ export const en: Translations = {
   },
   addProduct: {
     title: 'New Product',
-    subtitle: 'Add a new product to the catalog',
+    subtitle: 'Add a new product to warehouse catalog',
+    editTitle: 'Edit Product',
+    editSubtitle: 'Update product catalog details',
+    name: 'Product Name',
+    namePlaceholder: 'e.g. Shower Gel 500ml',
+    sku: 'SKU (Stock Keeping Unit)',
+    skuPlaceholder: 'e.g. SH-001',
+    barcode: 'Barcode',
+    barcodePlaceholder: 'e.g. 690123456701 (manual entry)',
+    description: 'Description',
+    descriptionPlaceholder: 'Item specifications, packaging, notes…',
+    category: 'Category',
+    categoryPlaceholder: 'e.g. Cosmetics & Personal Care',
+    photo: 'Product Image',
+    uploadPhoto: 'Upload image',
+    changePhoto: 'Change image',
+    piecesPerCarton: 'Pieces per Carton',
+    sellingPrice: 'Selling Price / Carton (ETB)',
+    costPrice: 'Cost / Carton (ETB)',
+    lowStockThreshold: 'Low Stock Threshold (Cartons)',
+    unitCarton: 'Unit = Carton (standard warehouse unit)',
+    submit: 'Add Product',
+    submitEdit: 'Update Product',
+    submitting: 'Saving…',
+    cancel: 'Cancel',
     comingSoon: 'Coming Soon',
     comingSoonDetail:
       'New Product form will support: product name, SKU, category, starting stock, selling price per carton, and pieces per carton.',
@@ -716,6 +776,12 @@ export const en: Translations = {
       `The customer only owes ${balance.toLocaleString()} ETB.`,
     costNegative: 'Cost cannot be less than 0.',
     unauthorized: 'Only the manager can perform this action.',
+    productNameRequired: 'Product name is required.',
+    skuRequired: 'SKU is required.',
+    skuDuplicate: 'A product with this SKU already exists.',
+    barcodeDuplicate: 'A product with this barcode already exists.',
+    piecesPositiveInteger: 'Pieces per carton must be a positive whole number.',
+    thresholdNonNegativeInteger: 'Threshold must be a whole number 0 or greater.',
   },
   common: {
     cancel: 'Cancel',
@@ -870,6 +936,9 @@ export const am: Translations = {
     sellingPrice: 'የሽያጭ ዋጋ / ካርቶን',
     costPrice: 'የዋጋ ወጪ / ካርቶን',
     addStock: 'እቃ ጨምር',
+    editProduct: 'እቃ አስተካክል',
+    barcode: 'ባርኮድ',
+    description: 'መግለጫ',
     scanTitle: 'ባርኮድ ይቃኙ',
     scanHint: 'የእቃውን ባርኮድ በፍሬሙ ውስጥ ያስቀምጡ።',
     scanDone: 'ተጠናቋል',
@@ -1018,6 +1087,30 @@ export const am: Translations = {
   addProduct: {
     title: 'አዲስ እቃ',
     subtitle: 'አዲስ ዓይነት እቃ ወደ ካታሎግ ጨምር',
+    editTitle: 'እቃ አስተካክል',
+    editSubtitle: 'የእቃውን መረጃ ያሻሽሉ',
+    name: 'የእቃው ስም',
+    namePlaceholder: 'ለምሳሌ፦ ሻወር ጄል 500ml',
+    sku: 'SKU (የእቃ መለያ ኮድ)',
+    skuPlaceholder: 'ለምሳሌ፦ SH-001',
+    barcode: 'ባርኮድ',
+    barcodePlaceholder: 'ለምሳሌ፦ 690123456701 (በእጅ አስገባ)',
+    description: 'መግለጫ',
+    descriptionPlaceholder: 'የእቃው ዝርዝር ሁኔታ፣ ማስታወሻ…',
+    category: 'ምድብ',
+    categoryPlaceholder: 'ለምሳሌ፦ መዋቢያ ወይም የቤት እቃ',
+    photo: 'የእቃው ፎቶ',
+    uploadPhoto: 'ፎቶ ጫን',
+    changePhoto: 'ፎቶ ቀይር',
+    piecesPerCarton: 'ፕስ / ካርቶን (በአንድ ካርቶን)',
+    sellingPrice: 'የካርቶን መሸጫ ዋጋ (ብር)',
+    costPrice: 'የካርቶን ወጪ (ብር)',
+    lowStockThreshold: 'አነስተኛ ክምችት ማስጠንቀቂያ (ካርቶን)',
+    unitCarton: 'መለኪያ = ካርቶን (የመጋዘን መደበኛ መለኪያ)',
+    submit: 'እቃ መዝግብ',
+    submitEdit: 'መረጃ አሻሽል',
+    submitting: 'በመመዝገብ ላይ…',
+    cancel: 'ሰርዝ',
     comingSoon: 'በቅርቡ ይመጣል',
     comingSoonDetail:
       'አዲስ እቃ ፎርም ሲቀርብ፦ ስም፣ ኮድ፣ ዓይነት፣ የጀምር ብዛት፣ የሽያጭ ዋጋ፣ ፕስ በካርቶን ይካተታሉ።',
@@ -1069,6 +1162,12 @@ export const am: Translations = {
       `ደንበኛ ${balance.toLocaleString()} ብር ብቻ ሂሳብ አለበት።`,
     costNegative: 'ወጪ ከዜሮ ያነሰ መሆን አይቻልም።',
     unauthorized: 'ይህን ድርጊት ሥራ አስኪያጅ ብቻ ማድረግ ይችላል።',
+    productNameRequired: 'የእቃ ስም ማስገባት ግዴታ ነው።',
+    skuRequired: 'SKU (የእቃ መለያ ኮድ) ማስገባት ግዴታ ነው።',
+    skuDuplicate: 'በዚህ SKU የተመዘገበ እቃ አስቀድሞ አለ።',
+    barcodeDuplicate: 'በዚህ ባርኮድ የተመዘገበ እቃ አስቀድሞ አለ።',
+    piecesPositiveInteger: 'በካርቶን ያለው ፕስ ሙሉ አዎንታዊ ቁጥር መሆን አለበት።',
+    thresholdNonNegativeInteger: 'ዝቅተኛ ክምችት ማስጠንቀቂያ 0 ወይም ከዚያ በላይ ሙሉ ቁጥር መሆን አለበት።',
   },
 
   common: {

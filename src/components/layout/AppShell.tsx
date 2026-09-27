@@ -21,6 +21,7 @@ import RecordSaleModal from '../transactions/RecordSaleModal';
 import RecordCustomerPaymentModal from '../transactions/RecordCustomerPaymentModal';
 import RecordPurchaseModal from '../transactions/RecordPurchaseModal';
 import TransactionSuccessModal from '../transactions/TransactionSuccessModal';
+import ProductFormModal from '../inventory/ProductFormModal';
 
 export default function AppShell() {
   const {
@@ -212,6 +213,7 @@ export default function AppShell() {
       <RecordCustomerPaymentModal />
       <RecordPurchaseModal />
       <TransactionSuccessModal />
+      <ProductFormModal />
 
       {toast && (
         <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[60] flex items-start gap-3 bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-2xl min-w-[260px] max-w-[340px]">

@@ -224,40 +224,51 @@ create policy "customers_update_manager" on public.customers for update
   with check (exists (select 1 from public.profiles where id = auth.uid() and role = 'manager'));
 
 -- INVENTORY TRANSACTIONS
+-- All authenticated users (Manager & Warehouse) can view physical stock movement & activity
 create policy "inventory_select_auth" on public.inventory_transactions for select
   using (auth.uid() is not null);
 
-create policy "inventory_insert_auth" on public.inventory_transactions for insert
-  with check (auth.uid() is not null);
+-- Direct client INSERT into inventory_transactions is strictly FORBIDDEN for ALL clients (❌)
+-- Inventory movements occur exclusively through authorized SECURITY DEFINER RPCs (record_sale, record_purchase)
+create policy "inventory_no_direct_client_insert" on public.inventory_transactions for insert
+  with check (false);
 
--- SALES (Stock Out)
-create policy "sales_select_auth" on public.sales for select
-  using (auth.uid() is not null);
+-- SALES (Financial Stock Out Records)
+-- Only Managers can view raw financial sales records
+create policy "sales_select_manager" on public.sales for select
+  using (exists (select 1 from public.profiles where id = auth.uid() and role = 'manager'));
 
-create policy "sales_insert_auth" on public.sales for insert
-  with check (auth.uid() is not null);
+-- Direct client INSERT into sales is strictly FORBIDDEN for ALL clients (❌)
+-- Sales must be recorded exclusively through the authorized SECURITY DEFINER RPC (record_sale)
+create policy "sales_no_direct_client_insert" on public.sales for insert
+  with check (false);
 
--- SALE ITEMS
-create policy "sale_items_select_auth" on public.sale_items for select
-  using (auth.uid() is not null);
+-- SALE ITEMS (Financial Line Items)
+-- Only Managers can view raw sale item prices and subtotals
+create policy "sale_items_select_manager" on public.sale_items for select
+  using (exists (select 1 from public.profiles where id = auth.uid() and role = 'manager'));
 
-create policy "sale_items_insert_auth" on public.sale_items for insert
-  with check (auth.uid() is not null);
+-- Direct client INSERT into sale_items is strictly FORBIDDEN for ALL clients (❌)
+create policy "sale_items_no_direct_client_insert" on public.sale_items for insert
+  with check (false);
 
--- PURCHASES (Stock In)
-create policy "purchases_select_auth" on public.purchases for select
-  using (auth.uid() is not null);
+-- PURCHASES (Financial Stock In Records)
+-- Only Managers can view raw financial purchase records and supplier costs
+create policy "purchases_select_manager" on public.purchases for select
+  using (exists (select 1 from public.profiles where id = auth.uid() and role = 'manager'));
 
-create policy "purchases_insert_auth" on public.purchases for insert
-  with check (auth.uid() is not null);
+-- Direct client INSERT into purchases is strictly FORBIDDEN for ALL clients (❌)
+-- Purchases must be recorded exclusively through the authorized SECURITY DEFINER RPC (record_purchase)
+create policy "purchases_no_direct_client_insert" on public.purchases for insert
+  with check (false);
 
--- LEDGER TRANSACTIONS
+-- LEDGER TRANSACTIONS (Customer Financial Balances & Payment Records)
 -- Only Managers can view financial ledger transactions
 create policy "ledger_select_manager" on public.ledger_transactions for select
   using (exists (select 1 from public.profiles where id = auth.uid() and role = 'manager'));
 
 -- Direct client INSERT into ledger_transactions is strictly FORBIDDEN for ALL clients (❌)
--- Ledger rows are created exclusively via authorized SECURITY DEFINER RPCs
+-- Ledger rows are created exclusively via authorized SECURITY DEFINER RPCs (record_sale, record_customer_payment)
 create policy "ledger_no_direct_client_insert" on public.ledger_transactions for insert
   with check (false);
 

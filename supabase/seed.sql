@@ -69,12 +69,14 @@ BEGIN
     avatar_url = EXCLUDED.avatar_url;
 
   -- 3. Products
-  INSERT INTO public.products (id, name, sku, category, image_url, pieces_per_carton, selling_price_per_carton, cost_per_carton, low_stock_threshold_cartons, created_by)
+  INSERT INTO public.products (id, name, sku, barcode, description, category, image_url, pieces_per_carton, selling_price_per_carton, cost_per_carton, low_stock_threshold_cartons, created_by)
   VALUES
   (
     v_prod1_id,
     'White Cooking Oil 5L',
     'OIL-5L-WHT',
+    '600123456701',
+    'Refined pure vegetable cooking oil, 5L cans, 4 cans per carton',
     'Cooking Oils',
     'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=500&auto=format&fit=crop&q=60',
     4,
@@ -87,6 +89,8 @@ BEGIN
     v_prod2_id,
     'Tomato Paste 800g',
     'TOM-800G-PST',
+    '600123456702',
+    'Double concentrated canned tomato paste, 800g tins, 12 tins per carton',
     'Canned Foods',
     'https://images.unsplash.com/photo-1534483509719-3feaee7c30da?w=500&auto=format&fit=crop&q=60',
     12,
@@ -99,6 +103,8 @@ BEGIN
     v_prod3_id,
     'Wheat Flour 25kg',
     'FLR-25KG-WHT',
+    '600123456703',
+    'Premium baker grade wheat flour bag, 25kg per bag',
     'Grains & Flour',
     'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=500&auto=format&fit=crop&q=60',
     1,

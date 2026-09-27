@@ -7,6 +7,7 @@ import {
   CustomerLedgerEntry,
   InventoryTransaction,
   Product,
+  ProductFormInput,
   User,
   UserRole,
 } from '../types';
@@ -34,6 +35,7 @@ import {
   PurchaseFormInput,
   SaleFormInput,
   validateCustomerPayment,
+  validateProduct,
   validatePurchase,
   validateSale,
 } from '../domain/validation/validators';
@@ -118,6 +120,12 @@ interface StockFlowContextValue {
   executeSale: (input: SaleFormInput) => Promise<{ success: boolean; reference?: string; validationErrors?: Record<string, string> }>;
   executePayment: (input: CustomerPaymentFormInput) => Promise<{ success: boolean; reference?: string; validationErrors?: Record<string, string> }>;
   executePurchase: (input: PurchaseFormInput) => Promise<{ success: boolean; reference?: string; validationErrors?: Record<string, string> }>;
+
+  // Product Actions
+  saveProduct: (
+    input: ProductFormInput,
+    productId?: string
+  ) => Promise<{ success: boolean; product?: Product; validationErrors?: Record<string, string> }>;
 }
 
 const StockFlowContext = createContext<StockFlowContextValue | undefined>(undefined);
@@ -408,38 +416,92 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
     const stockMap = new Map<string, { name: string; currentStockCartons: number }>();
     products.forEach((p) => stockMap.set(p.id, { name: p.name, currentStockCartons: p.currentStockCartons }));
 
-    // 3. Pure domain validation
+    // 3. Pure domain validation (runs client-side regardless of Supabase config)
     const validation = validateSale(input, stockMap);
     if (!validation.isValid) {
       return { success: false, validationErrors: validation.errors };
     }
 
-    // 4. Calculations
+    // 4. Pre-compute display values (used for feedback in both paths)
     const totalAmount = calculateSaleSubtotal(input.items);
     const { creditRemaining } = calculateSaleOutstanding(totalAmount, input.amountPaid);
-    const saleRef = generateTransactionReference('SALE');
     const customer = customers.find((c) => c.id === input.customerId);
     const customerName = customer ? customer.name : 'Unknown Customer';
     const customerSummary = calculateCustomerFinancials(input.customerId, rawTransactions);
+    const itemDescriptions: string[] = input.items.map((item) => {
+      const prod = products.find((p) => p.id === item.productId);
+      return `${item.quantityCartons} cartons ${prod?.name ?? item.productId}`;
+    });
+
+    // ── SUPABASE PATH ──────────────────────────────────────────────────────────
+    if (isSupabaseConfigured) {
+      try {
+        // Call record_sale RPC — auth.uid() is resolved server-side from the session.
+        // No client-supplied user ID or role is passed.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data, error } = await supabase.rpc('record_sale', {
+          p_customer_id: input.customerId,
+          p_items: input.items.map((item) => ({
+            product_id: item.productId,
+            quantity_cartons: item.quantityCartons,
+            price_per_carton: item.pricePerCarton,
+          })),
+          p_amount_paid: input.amountPaid,
+          p_payment_method: input.paymentMethod || 'Cash',
+          p_notes: input.notes ?? undefined,
+        } as any);
+
+        if (error) {
+          return { success: false, validationErrors: { general: error.message } };
+        }
+
+        const result = data as { success: boolean; reference: string; total_amount: number; amount_paid: number; credit_amount: number };
+        const saleRef = result.reference;
+
+        // Optimistically update local in-memory stock so UI reflects new stock instantly
+        const updatedProducts = products.map((p) => {
+          const soldItem = input.items.find((i) => i.productId === p.id);
+          if (!soldItem) return p;
+          return { ...p, currentStockCartons: calculateStockAfterSale(p.currentStockCartons, soldItem.quantityCartons) };
+        });
+        setProducts(updatedProducts);
+
+        setSuccessFeedback({
+          type: 'sale',
+          reference: saleRef,
+          title: 'Sale Recorded Successfully',
+          details: [
+            `Reference: ${saleRef}`,
+            `Customer: ${customerName}`,
+            `Cartons Sold: ${itemDescriptions.join('; ')}`,
+            `Total Amount: ${result.total_amount.toLocaleString()} ETB`,
+            `Amount Paid: ${result.amount_paid.toLocaleString()} ETB (${input.paymentMethod || 'Cash'})`,
+            `Credit Remaining: ${result.credit_amount.toLocaleString()} ETB`,
+            `Remaining Product Stock: ${updatedProducts.filter(p => input.items.some(i => i.productId === p.id)).map(p => `${p.name} (${p.currentStockCartons} cartons)`).join(', ')}`,
+          ],
+        });
+
+        return { success: true, reference: saleRef };
+      } catch (err: any) {
+        return { success: false, validationErrors: { general: err.message || 'Unexpected error recording sale.' } };
+      }
+    }
+
+    // ── LOCAL / DEV FALLBACK PATH (Supabase not configured) ───────────────────
+    const saleRef = generateTransactionReference('SALE');
     const today = new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
 
-    // 5. Update Inventory (Decrement cartons for all items in sale)
     const updatedProducts = [...products];
     const newInvTxs: InventoryTransaction[] = [];
-    const itemDescriptions: string[] = [];
 
     input.items.forEach((item) => {
       const prodIndex = updatedProducts.findIndex((p) => p.id === item.productId);
       if (prodIndex !== -1) {
         const prod = updatedProducts[prodIndex];
-        const newStock = calculateStockAfterSale(prod.currentStockCartons, item.quantityCartons);
         updatedProducts[prodIndex] = {
           ...prod,
-          currentStockCartons: newStock,
+          currentStockCartons: calculateStockAfterSale(prod.currentStockCartons, item.quantityCartons),
         };
-
-        itemDescriptions.push(`${item.quantityCartons} cartons ${prod.name}`);
-
         newInvTxs.push({
           id: `inv-${Date.now()}-${item.productId}`,
           referenceNumber: saleRef,
@@ -453,7 +515,6 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    // 6. Update Customer Ledger
     const newLedgerTxs: RawLedgerTransaction[] = [
       {
         id: `tx-sale-${Date.now()}`,
@@ -467,7 +528,6 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
       },
     ];
 
-    // If upfront payment was made, append immediate payment record
     if (input.amountPaid > 0) {
       const payRef = generateTransactionReference('PAY');
       newLedgerTxs.push({
@@ -483,12 +543,10 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
       });
     }
 
-    // Atomic State Commit
     setProducts(updatedProducts);
     setRawTransactions((prev) => [...prev, ...newLedgerTxs]);
     setInventoryTransactions((prev) => [...newInvTxs, ...prev]);
 
-    // Provide feedback
     setSuccessFeedback({
       type: 'sale',
       reference: saleRef,
@@ -511,6 +569,7 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
   // TRANSACTION WORKFLOW 2: RECORD CUSTOMER PAYMENT
   // ==========================================
   const executePayment = async (input: CustomerPaymentFormInput) => {
+    // Manager-only enforced client-side AND by the RPC (record_customer_payment raises exception for non-managers)
     if (currentUser.role !== 'manager') {
       return { success: false, validationErrors: { general: 'Unauthorized: Only Managers can record payments.' } };
     }
@@ -521,9 +580,53 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
       return { success: false, validationErrors: validation.errors };
     }
 
-    const payRef = generateTransactionReference('PAY');
     const customer = customers.find((c) => c.id === input.customerId);
     const customerName = customer ? customer.name : 'Customer';
+
+    // ── SUPABASE PATH ──────────────────────────────────────────────────────────
+    if (isSupabaseConfigured) {
+      try {
+        // Call record_customer_payment RPC — auth.uid() is resolved server-side.
+        // The RPC internally enforces manager-only and prohibits direct ledger INSERT.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data, error } = await supabase.rpc('record_customer_payment', {
+          p_customer_id: input.customerId,
+          p_amount: input.amount,
+          p_payment_method: input.paymentMethod,
+          p_notes: input.reference ?? undefined,
+        } as any);
+
+        if (error) {
+          return { success: false, validationErrors: { general: error.message } };
+        }
+
+        const result = data as { success: boolean; reference: string; amount: number; remaining_balance: number };
+        const payRef = result.reference;
+        const newBalance = result.remaining_balance;
+
+        setSuccessFeedback({
+          type: 'payment',
+          reference: payRef,
+          title: 'Payment Recorded Successfully',
+          details: [
+            `Reference: ${payRef}`,
+            `Customer: ${customerName}`,
+            `Amount Received: ${result.amount.toLocaleString()} ETB`,
+            `Payment Method: ${input.paymentMethod}${input.reference ? ` (${input.reference})` : ''}`,
+            `Previous Balance: ${customerSummary.outstandingBalance.toLocaleString()} ETB`,
+            `Remaining Balance: ${newBalance.toLocaleString()} ETB`,
+            `Physical Inventory: Strictly unaffected (financial ledger update only)`,
+          ],
+        });
+
+        return { success: true, reference: payRef };
+      } catch (err: any) {
+        return { success: false, validationErrors: { general: err.message || 'Unexpected error recording payment.' } };
+      }
+    }
+
+    // ── LOCAL / DEV FALLBACK PATH (Supabase not configured) ───────────────────
+    const payRef = generateTransactionReference('PAY');
     const today = new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
 
     const newPaymentTx: RawLedgerTransaction = {
@@ -573,22 +676,65 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
       return { success: false, validationErrors: validation.errors };
     }
 
-    const purRef = generateTransactionReference('PUR');
+    const product = products.find((p) => p.id === input.productId);
+    const productName = product?.name ?? '';
+    const previousStock = product?.currentStockCartons ?? 0;
 
-    // Update Product Stock in Cartons
-    let updatedProductName = '';
-    let previousStock = 0;
-    let newStock = 0;
+    // ── SUPABASE PATH ──────────────────────────────────────────────────────────
+    if (isSupabaseConfigured) {
+      try {
+        // Call record_purchase RPC — auth.uid() is resolved server-side.
+        // No client-supplied user ID or role is passed.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data, error } = await supabase.rpc('record_purchase', {
+          p_product_id: input.productId,
+          p_quantity_cartons: input.quantityCartons,
+          p_cost_per_carton: input.costPerCarton,
+          p_supplier_name: input.supplierName ?? undefined,
+        } as any);
+
+        if (error) {
+          return { success: false, validationErrors: { general: error.message } };
+        }
+
+        const result = data as { success: boolean; reference: string; quantity_cartons: number; total_cost: number };
+        const purRef = result.reference;
+        const newStock = calculateStockAfterPurchase(previousStock, input.quantityCartons);
+
+        // Optimistically update local in-memory stock
+        setProducts((prev) =>
+          prev.map((p) =>
+            p.id === input.productId ? { ...p, currentStockCartons: newStock } : p
+          )
+        );
+
+        setSuccessFeedback({
+          type: 'purchase',
+          reference: purRef,
+          title: 'Stock Added Successfully',
+          details: [
+            `Reference: ${purRef}`,
+            `Product: ${productName}`,
+            `Cartons Received: +${result.quantity_cartons} cartons`,
+            `Previous Stock: ${previousStock} cartons`,
+            `New Total Stock: ${newStock} cartons`,
+            `Customer Debt Balances: Strictly unaffected (no financial changes)`,
+          ],
+        });
+
+        return { success: true, reference: purRef };
+      } catch (err: any) {
+        return { success: false, validationErrors: { general: err.message || 'Unexpected error recording purchase.' } };
+      }
+    }
+
+    // ── LOCAL / DEV FALLBACK PATH (Supabase not configured) ───────────────────
+    const purRef = generateTransactionReference('PUR');
+    const newStock = calculateStockAfterPurchase(previousStock, input.quantityCartons);
 
     const updatedProducts = products.map((p) => {
       if (p.id === input.productId) {
-        updatedProductName = p.name;
-        previousStock = p.currentStockCartons;
-        newStock = calculateStockAfterPurchase(p.currentStockCartons, input.quantityCartons);
-        return {
-          ...p,
-          currentStockCartons: newStock,
-        };
+        return { ...p, currentStockCartons: newStock };
       }
       return p;
     });
@@ -597,7 +743,7 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
       id: `inv-${Date.now()}-${input.productId}`,
       referenceNumber: purRef,
       productId: input.productId,
-      productName: updatedProductName,
+      productName: productName,
       type: 'purchase',
       quantityCartons: input.quantityCartons,
       timeAgo: 'Just now',
@@ -614,7 +760,7 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
       title: 'Stock Added Successfully',
       details: [
         `Reference: ${purRef}`,
-        `Product: ${updatedProductName}`,
+        `Product: ${productName}`,
         `Cartons Received: +${input.quantityCartons} cartons`,
         `Previous Stock: ${previousStock} cartons`,
         `New Total Stock: ${newStock} cartons`,
@@ -623,6 +769,219 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
     });
 
     return { success: true, reference: purRef };
+  };
+
+  // ==========================================
+  // PRODUCT ACTION: CREATE OR EDIT PRODUCT
+  // ==========================================
+  const saveProduct = async (
+    input: ProductFormInput,
+    productId?: string
+  ): Promise<{ success: boolean; product?: Product; validationErrors?: Record<string, string> }> => {
+    // 1. Role permission enforcement (Manager only can create/edit products)
+    if (currentUser.role !== 'manager') {
+      return {
+        success: false,
+        validationErrors: { general: 'Unauthorized: Only Managers can create or edit products.' },
+      };
+    }
+
+    // 2. Pure domain validation
+    const validation = validateProduct(input, products, productId);
+    if (!validation.isValid) {
+      return { success: false, validationErrors: validation.errors };
+    }
+
+    const cleanName = input.name.trim();
+    const cleanSku = input.sku.trim().toUpperCase();
+    const cleanBarcode = input.barcode?.trim() || null;
+    const cleanDescription = input.description?.trim() || null;
+    const cleanCategory = input.category?.trim() || 'General';
+    const fallbackImage = 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=200&auto=format&fit=crop&q=80';
+    const cleanImage = input.image?.trim() || fallbackImage;
+    const cleanPieces = input.piecesPerCarton || 24;
+    const cleanSellingPrice = Number(input.sellingPricePerCarton);
+    const cleanCostPrice = Number(input.costPerCarton);
+    const cleanThreshold = input.lowStockThresholdCartons !== undefined && input.lowStockThresholdCartons !== null
+      ? Number(input.lowStockThresholdCartons)
+      : 10;
+
+    // ── SUPABASE PATH ──────────────────────────────────────────────────────────
+    if (isSupabaseConfigured) {
+      try {
+        if (productId) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { data, error } = await (supabase
+            .from('products') as any)
+            .update({
+              name: cleanName,
+              sku: cleanSku,
+              barcode: cleanBarcode,
+              description: cleanDescription,
+              category: cleanCategory,
+              image_url: cleanImage,
+              pieces_per_carton: cleanPieces,
+              selling_price_per_carton: cleanSellingPrice,
+              cost_per_carton: cleanCostPrice,
+              low_stock_threshold_cartons: cleanThreshold,
+            })
+            .eq('id', productId)
+            .select()
+            .single();
+
+          if (error) {
+            return { success: false, validationErrors: { general: error.message } };
+          }
+
+          let updatedProd: Product | undefined;
+          setProducts((prev) =>
+            prev.map((p) => {
+              if (p.id === productId) {
+                updatedProd = {
+                  ...p,
+                  name: data.name,
+                  sku: data.sku,
+                  barcode: data.barcode || undefined,
+                  description: data.description || undefined,
+                  category: data.category || cleanCategory,
+                  image: data.image_url || cleanImage,
+                  piecesPerCarton: data.pieces_per_carton || cleanPieces,
+                  sellingPricePerCarton: Number(data.selling_price_per_carton),
+                  costPerCarton: Number(data.cost_per_carton),
+                  lowStockThresholdCartons: data.low_stock_threshold_cartons,
+                };
+                return updatedProd;
+              }
+              return p;
+            })
+          );
+
+          showToast({
+            type: 'info',
+            title: 'Product Updated',
+            message: `${cleanName} (${cleanSku}) was updated successfully.`,
+          });
+
+          return { success: true, product: updatedProd };
+        } else {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { data, error } = await (supabase
+            .from('products') as any)
+            .insert({
+              name: cleanName,
+              sku: cleanSku,
+              barcode: cleanBarcode,
+              description: cleanDescription,
+              category: cleanCategory,
+              image_url: cleanImage,
+              pieces_per_carton: cleanPieces,
+              selling_price_per_carton: cleanSellingPrice,
+              cost_per_carton: cleanCostPrice,
+              low_stock_threshold_cartons: cleanThreshold,
+              created_by: currentUser.id,
+            })
+            .select()
+            .single();
+
+          if (error) {
+            return { success: false, validationErrors: { general: error.message } };
+          }
+
+          const newProd: Product = {
+            id: data.id,
+            name: data.name,
+            sku: data.sku,
+            barcode: data.barcode || undefined,
+            description: data.description || undefined,
+            category: data.category || cleanCategory,
+            image: data.image_url || cleanImage,
+            currentStockCartons: 0, // Stock is derived transactionally; new product starts at 0 cartons
+            unit: 'carton',
+            piecesPerCarton: data.pieces_per_carton || cleanPieces,
+            sellingPricePerCarton: Number(data.selling_price_per_carton),
+            costPerCarton: Number(data.cost_per_carton),
+            lowStockThresholdCartons: data.low_stock_threshold_cartons,
+            createdAt: data.created_at,
+          };
+
+          setProducts((prev) => [newProd, ...prev]);
+
+          showToast({
+            type: 'info',
+            title: 'Product Created',
+            message: `${cleanName} (${cleanSku}) was added to catalog.`,
+          });
+
+          return { success: true, product: newProd };
+        }
+      } catch (err: any) {
+        return {
+          success: false,
+          validationErrors: { general: err.message || 'Unexpected error saving product.' },
+        };
+      }
+    }
+
+    // ── LOCAL / DEV FALLBACK PATH (Supabase not configured) ───────────────────
+    if (productId) {
+      let updatedProd: Product | undefined;
+      setProducts((prev) =>
+        prev.map((p) => {
+          if (p.id === productId) {
+            updatedProd = {
+              ...p,
+              name: cleanName,
+              sku: cleanSku,
+              barcode: cleanBarcode || undefined,
+              description: cleanDescription || undefined,
+              category: cleanCategory,
+              image: cleanImage,
+              piecesPerCarton: cleanPieces,
+              sellingPricePerCarton: cleanSellingPrice,
+              costPerCarton: cleanCostPrice,
+              lowStockThresholdCartons: cleanThreshold,
+            };
+            return updatedProd;
+          }
+          return p;
+        })
+      );
+
+      showToast({
+        type: 'info',
+        title: 'Product Updated',
+        message: `${cleanName} (${cleanSku}) was updated successfully.`,
+      });
+
+      return { success: true, product: updatedProd };
+    } else {
+      const newProd: Product = {
+        id: `prod-${Date.now()}`,
+        name: cleanName,
+        sku: cleanSku,
+        barcode: cleanBarcode || undefined,
+        description: cleanDescription || undefined,
+        category: cleanCategory,
+        image: cleanImage,
+        currentStockCartons: 0, // Stock is strictly 0 until a purchase transaction is recorded
+        unit: 'carton',
+        piecesPerCarton: cleanPieces,
+        sellingPricePerCarton: cleanSellingPrice,
+        costPerCarton: cleanCostPrice,
+        lowStockThresholdCartons: cleanThreshold,
+        createdAt: new Date().toISOString(),
+      };
+
+      setProducts((prev) => [newProd, ...prev]);
+
+      showToast({
+        type: 'info',
+        title: 'Product Created',
+        message: `${cleanName} (${cleanSku}) was added to catalog.`,
+      });
+
+      return { success: true, product: newProd };
+    }
   };
 
   const value: StockFlowContextValue = {
@@ -665,6 +1024,7 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
     executeSale,
     executePayment,
     executePurchase,
+    saveProduct,
   };
 
   return <StockFlowContext.Provider value={value}>{children}</StockFlowContext.Provider>;

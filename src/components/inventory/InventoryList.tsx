@@ -12,6 +12,7 @@ export default function InventoryList() {
     setSelectedProductId,
     setActiveModal,
     setPreselectedProductId,
+    currentUser,
   } = useStockFlow();
   const { t } = useLanguage();
 
@@ -25,6 +26,7 @@ export default function InventoryList() {
       const matchesSearch =
         p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (p.barcode && p.barcode.toLowerCase().includes(searchQuery.toLowerCase())) ||
         p.category.toLowerCase().includes(searchQuery.toLowerCase());
 
       if (!matchesSearch) return false;
@@ -52,14 +54,19 @@ export default function InventoryList() {
           <h1 className="text-xl font-bold text-slate-900 tracking-tight">{t.inventory.title}</h1>
           <p className="text-xs text-slate-500">{t.inventory.subtitle}</p>
         </div>
-        <div
-          title="Catalog creation will be available in Phase 3"
-          className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 border border-slate-200/80 text-slate-500 rounded-xl text-xs font-semibold cursor-not-allowed select-none"
-        >
-          <Plus className="w-3.5 h-3.5 text-slate-400" />
-          <span>{t.inventory.addProduct}</span>
-          <span className="text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded font-medium">Phase 3</span>
-        </div>
+        {currentUser.role === 'manager' && (
+          <button
+            type="button"
+            onClick={() => {
+              setPreselectedProductId(null);
+              setActiveModal('add_product');
+            }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold shadow-2xs transition-colors active:scale-[0.98]"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>{t.inventory.addProduct}</span>
+          </button>
+        )}
       </div>
 
       {/* Search Bar with Barcode Scan Affordance */}
@@ -284,7 +291,15 @@ export default function InventoryList() {
                 />
               </div>
               <h2 className="text-lg font-bold text-slate-900">{selectedProduct.name}</h2>
-              <p className="text-xs text-slate-400 font-mono mt-0.5">SKU: {selectedProduct.sku}</p>
+              <div className="flex items-center justify-center gap-2 mt-0.5 text-xs text-slate-400 font-mono">
+                <span>SKU: {selectedProduct.sku}</span>
+                {selectedProduct.barcode && (
+                  <>
+                    <span>•</span>
+                    <span>{t.inventory.barcode}: {selectedProduct.barcode}</span>
+                  </>
+                )}
+              </div>
 
               <div className="mt-2">
                 {selectedProduct.currentStockCartons === 0 ? (
@@ -325,6 +340,22 @@ export default function InventoryList() {
             {/* Product Specifications Grid */}
             <div className="space-y-2 border-t border-slate-100 pt-4 text-xs">
               <div className="flex justify-between py-1 border-b border-slate-50">
+                <span className="text-slate-500">SKU</span>
+                <span className="font-mono font-semibold text-slate-800">{selectedProduct.sku}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-50">
+                <span className="text-slate-500">{t.inventory.barcode}</span>
+                <span className="font-mono font-semibold text-slate-800">{selectedProduct.barcode || '—'}</span>
+              </div>
+              {selectedProduct.description && (
+                <div className="flex justify-between py-1 border-b border-slate-50 gap-4">
+                  <span className="text-slate-500 flex-shrink-0">{t.inventory.description}</span>
+                  <span className="font-medium text-slate-700 text-right leading-relaxed">
+                    {selectedProduct.description}
+                  </span>
+                </div>
+              )}
+              <div className="flex justify-between py-1 border-b border-slate-50">
                 <span className="text-slate-500">{t.inventory.category}</span>
                 <span className="font-semibold text-slate-800">{selectedProduct.category}</span>
               </div>
@@ -346,8 +377,21 @@ export default function InventoryList() {
               </div>
             </div>
 
-            {/* Action Button: Record Purchase */}
+            {/* Action Buttons */}
             <div className="mt-6 flex gap-3">
+              {currentUser.role === 'manager' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPreselectedProductId(selectedProduct.id);
+                    setSelectedProductId(null);
+                    setActiveModal('add_product');
+                  }}
+                  className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors shadow-2xs"
+                >
+                  {t.inventory.editProduct}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => {

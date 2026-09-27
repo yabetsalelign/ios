@@ -115,23 +115,20 @@ export default function QuickActionSheet() {
           )}
 
           {isManager && (
-            <div
-              className="w-full text-left p-3.5 rounded-2xl border border-slate-100 bg-slate-50/40 opacity-60 flex items-center gap-4 cursor-not-allowed select-none"
-              title="Catalog creation will be supported in Phase 3"
+            <button
+              type="button"
+              onClick={() => handleSelectAction('add_product')}
+              className="w-full text-left p-4 rounded-2xl border border-slate-100 bg-slate-50/60 hover:bg-slate-100/80 flex items-center gap-4 group active:scale-95 transition-transform duration-100 ease-in-out touch-manipulation"
             >
-              <div className="w-11 h-11 rounded-xl bg-slate-200/80 text-slate-500 flex items-center justify-center flex-shrink-0">
-                <PackagePlus className="w-5 h-5 stroke-[2px]" />
+              <div className="w-11 h-11 rounded-xl bg-slate-200 text-slate-800 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+                <PackagePlus className="w-5 h-5 stroke-[2.2px]" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="font-semibold text-sm text-slate-600">{t.quickAction.newProduct}</h3>
-                  <span className="text-[10px] font-semibold bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full">
-                    Phase 3
-                  </span>
-                </div>
-                <p className="text-xs text-slate-400 mt-0.5 leading-snug">{t.quickAction.newProductSub}</p>
+                <h3 className="font-semibold text-sm text-slate-900 group-hover:text-slate-900">{t.quickAction.newProduct}</h3>
+                <p className="text-xs text-slate-500 mt-0.5 leading-snug">{t.quickAction.newProductSub}</p>
               </div>
-            </div>
+              <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-slate-700 group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+            </button>
           )}
         </div>
       </div>
