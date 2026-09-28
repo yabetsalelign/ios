@@ -115,6 +115,14 @@ interface StockFlowContextValue {
   executePayment: (input: CustomerPaymentFormInput) => Promise<{ success: boolean; reference?: string; validationErrors?: Record<string, string> }>;
   executePurchase: (input: PurchaseFormInput) => Promise<{ success: boolean; reference?: string; validationErrors?: Record<string, string> }>;
 
+  // Customer Actions
+  saveCustomer: (input: {
+    name: string;
+    phone?: string;
+    address?: string;
+    notes?: string;
+  }) => Promise<{ success: boolean; customer?: Customer; validationErrors?: Record<string, string> }>;
+
   // Product Actions
   saveProduct: (
     input: ProductFormInput,
@@ -466,8 +474,8 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
       totalInventoryValueETB,
       totalCustomerCreditETB,
       inStockCartons,
-      incomingCartons: incomingCartons || 185,
-      outgoingCartons: outgoingCartons || 74,
+      incomingCartons,
+      outgoingCartons,
       lowStockCount,
     };
   }, [products, customers, rawTransactions, inventoryTransactions]);
@@ -549,6 +557,8 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
             `Remaining Product Stock: ${updatedProducts.filter(p => input.items.some(i => i.productId === p.id)).map(p => `${p.name} (${p.currentStockCartons} cartons)`).join(', ')}`,
           ],
         });
+
+        await loadSupabaseData();
 
         return { success: true, reference: saleRef };
       } catch (err: any) {
@@ -688,6 +698,8 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
           ],
         });
 
+        await loadSupabaseData();
+
         return { success: true, reference: payRef };
       } catch (err: any) {
         return { success: false, validationErrors: { general: err.message || 'Unexpected error recording payment.' } };
@@ -790,6 +802,8 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
             `Customer Debt Balances: Strictly unaffected (no financial changes)`,
           ],
         });
+
+        await loadSupabaseData();
 
         return { success: true, reference: purRef };
       } catch (err: any) {
@@ -1053,6 +1067,97 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // ==========================================
+  // CUSTOMER ACTION: CREATE CUSTOMER
+  // ==========================================
+  const saveCustomer = async (input: {
+    name: string;
+    phone?: string;
+    address?: string;
+    notes?: string;
+  }): Promise<{ success: boolean; customer?: Customer; validationErrors?: Record<string, string> }> => {
+    const cleanName = input.name.trim();
+    if (!cleanName) {
+      return {
+        success: false,
+        validationErrors: { name: 'Customer name is required.' },
+      };
+    }
+
+    const cleanPhone = input.phone?.trim() || null;
+    const cleanAddress = input.address?.trim() || null;
+    const cleanNotes = input.notes?.trim() || null;
+
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await (supabase
+          .from('customers') as any)
+          .insert({
+            name: cleanName,
+            phone: cleanPhone,
+            address: cleanAddress,
+            notes: cleanNotes,
+          })
+          .select()
+          .single();
+
+        if (error) {
+          return { success: false, validationErrors: { general: error.message } };
+        }
+
+        const newCust: Customer = {
+          id: data.id,
+          name: data.name,
+          phone: data.phone || '',
+          address: data.address || '',
+          notes: data.notes || undefined,
+          createdAt: data.created_at,
+        };
+
+        setCustomers((prev) => {
+          const updated = [...prev.filter((c) => c.id !== newCust.id), newCust];
+          return updated.sort((a, b) => a.name.localeCompare(b.name));
+        });
+
+        showToast({
+          type: 'info',
+          title: 'Customer Created',
+          message: `${cleanName} was added to customer directory.`,
+        });
+
+        return { success: true, customer: newCust };
+      } catch (err: any) {
+        return {
+          success: false,
+          validationErrors: { general: err.message || 'Unexpected error creating customer.' },
+        };
+      }
+    }
+
+    // Local / Dev fallback
+    const newCust: Customer = {
+      id: `cust-${Date.now()}`,
+      name: cleanName,
+      phone: cleanPhone || '',
+      address: cleanAddress || '',
+      notes: cleanNotes || undefined,
+      createdAt: new Date().toISOString(),
+    };
+
+    setCustomers((prev) => {
+      const updated = [...prev, newCust];
+      return updated.sort((a, b) => a.name.localeCompare(b.name));
+    });
+
+    showToast({
+      type: 'info',
+      title: 'Customer Created',
+      message: `${cleanName} was added to customer directory.`,
+    });
+
+    return { success: true, customer: newCust };
+  };
+
   const value: StockFlowContextValue = {
     currentUser,
     isAuthenticated,
@@ -1092,6 +1197,7 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
     executeSale,
     executePayment,
     executePurchase,
+    saveCustomer,
     saveProduct,
   };
 

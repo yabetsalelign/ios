@@ -86,6 +86,10 @@ export function validateSale(
     0
   );
 
+  if (totalSaleAmount <= 0) {
+    errors.general = 'saleTotalZero';
+  }
+
   if (input.amountPaid < 0) {
     errors.amountPaid = 'amountPaidNegative';
   } else if (input.amountPaid > totalSaleAmount) {

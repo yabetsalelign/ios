@@ -276,6 +276,14 @@ export interface Translations {
     submit: string;
     submitting: string;
     etb: string;
+    searchCustomer: string;
+    addCustomer: string;
+    searchProduct: string;
+    inStock: string;
+    price: string;
+    outOfStock: string;
+    noCustomersFound: string;
+    noProductsFound: string;
   };
 
   // ── Customer Payment Modal ────────────────────────────────────
@@ -292,6 +300,7 @@ export interface Translations {
     submit: string;
     submitting: string;
     etb: string;
+    noDebtNotice: string;
   };
 
   // ── Add Stock / Purchase Modal ────────────────────────────────
@@ -396,6 +405,7 @@ export interface Translations {
     barcodeDuplicate: string;
     piecesPositiveInteger: string;
     thresholdNonNegativeInteger: string;
+    saleTotalZero: string;
   };
 
   // ── Common ────────────────────────────────────────────────────
@@ -669,6 +679,14 @@ export const en: Translations = {
     submit: 'Save Sale',
     submitting: 'Saving…',
     etb: 'ETB',
+    searchCustomer: 'Search customer…',
+    addCustomer: 'Add Customer',
+    searchProduct: 'Search product…',
+    inStock: 'In Stock',
+    price: 'Price',
+    outOfStock: 'Out of stock',
+    noCustomersFound: 'No customers found',
+    noProductsFound: 'No products found',
   },
   payment: {
     title: 'Customer Paid',
@@ -683,6 +701,7 @@ export const en: Translations = {
     submit: 'Save Payment',
     submitting: 'Saving…',
     etb: 'ETB',
+    noDebtNotice: 'This customer has no outstanding balance (0 ETB). Payments cannot be recorded.',
   },
   purchase: {
     title: 'Add Stock',
@@ -782,6 +801,7 @@ export const en: Translations = {
     barcodeDuplicate: 'A product with this barcode already exists.',
     piecesPositiveInteger: 'Pieces per carton must be a positive whole number.',
     thresholdNonNegativeInteger: 'Threshold must be a whole number 0 or greater.',
+    saleTotalZero: 'Sale total must be greater than zero ETB.',
   },
   common: {
     cancel: 'Cancel',
@@ -1055,6 +1075,14 @@ export const am: Translations = {
     submit: 'ሽያጭ አስቀምጥ',
     submitting: 'በማስቀመጥ ላይ…',
     etb: 'ብር',
+    searchCustomer: 'ደንበኛ ፈልግ…',
+    addCustomer: 'አዲስ ደንበኛ',
+    searchProduct: 'ምርት ፈልግ…',
+    inStock: 'በስቶክ ያለ',
+    price: 'ዋጋ',
+    outOfStock: 'ስቶክ አልቋል',
+    noCustomersFound: 'ደንበኛ አልተገኘም',
+    noProductsFound: 'ምርት አልተገኘም',
   },
   payment: {
     title: 'ደንበኛ ከፈለ',
@@ -1069,6 +1097,7 @@ export const am: Translations = {
     submit: 'ክፍያ አስቀምጥ',
     submitting: 'በሂደት ላይ…',
     etb: 'ብር',
+    noDebtNotice: 'ይህ ደንበኛ ያለበት ዕዳ 0 ብር ነው። ክፍያ መመዝገብ አይቻልም።',
   },
   purchase: {
     title: 'እቃ ጨምር',
@@ -1168,6 +1197,7 @@ export const am: Translations = {
     barcodeDuplicate: 'በዚህ ባርኮድ የተመዘገበ እቃ አስቀድሞ አለ።',
     piecesPositiveInteger: 'በካርቶን ያለው ፕስ ሙሉ አዎንታዊ ቁጥር መሆን አለበት።',
     thresholdNonNegativeInteger: 'ዝቅተኛ ክምችት ማስጠንቀቂያ 0 ወይም ከዚያ በላይ ሙሉ ቁጥር መሆን አለበት።',
+    saleTotalZero: 'የሽያጭ ድምር ከ 0 ብር በላይ መሆን አለበት።',
   },
 
   common: {

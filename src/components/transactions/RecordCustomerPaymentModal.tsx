@@ -4,6 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { X, CreditCard, AlertCircle, Loader2 } from 'lucide-react';
 import { useStockFlow } from '../../context/StockFlowContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { validationMessage } from '../../i18n/format';
 
 function RecordCustomerPaymentContent() {
   const {
@@ -35,15 +36,44 @@ function RecordCustomerPaymentContent() {
     setPreselectedCustomerId(null);
   };
 
+  const handleCustomerChange = (newCustId: string) => {
+    setCustomerId(newCustId);
+    setAmount(0);
+    setErrors({});
+  };
+
   const handleQuickPreset = (percent: number) => {
     if (outstanding > 0) {
       setAmount(Math.round(outstanding * percent));
+      if (errors.amount) {
+        const newErr = { ...errors };
+        delete newErr.amount;
+        setErrors(newErr);
+      }
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
+
+    // Strict validation: customer with 0 balance cannot record payment
+    if (outstanding <= 0) {
+      setErrors({
+        general: t.payment.noDebtNotice || 'This customer has no outstanding balance (0 ETB). Payments cannot be recorded.',
+      });
+      return;
+    }
+
+    if (!amount || amount <= 0) {
+      setErrors({ amount: 'enterPaymentAmount' });
+      return;
+    }
+
+    if (amount > outstanding) {
+      setErrors({ amount: `paymentExceedsBalance|${outstanding}` });
+      return;
+    }
 
     setIsSubmitting(true);
     setErrors({});
@@ -103,7 +133,7 @@ function RecordCustomerPaymentContent() {
           {errors.general && (
             <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-2 text-xs text-rose-700">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              <span>{errors.general}</span>
+              <span>{validationMessage(errors.general, t)}</span>
             </div>
           )}
 
@@ -115,7 +145,7 @@ function RecordCustomerPaymentContent() {
             <select
               id="payment-customer"
               value={customerId}
-              onChange={(e) => setCustomerId(e.target.value)}
+              onChange={(e) => handleCustomerChange(e.target.value)}
               className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-900 focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 font-medium"
             >
               {customers.map((c) => {
@@ -130,7 +160,7 @@ function RecordCustomerPaymentContent() {
             {errors.customerId && (
               <p className="text-[11px] text-rose-600 mt-1 flex items-center gap-1 font-medium">
                 <AlertCircle className="w-3 h-3" />
-                {errors.customerId}
+                {validationMessage(errors.customerId, t)}
               </p>
             )}
           </div>
@@ -138,10 +168,22 @@ function RecordCustomerPaymentContent() {
           {/* Current Outstanding Balance Display */}
           <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-600">{t.payment.currentOwes}</span>
-            <span className="text-base font-extrabold text-rose-700 font-mono">
+            <span
+              className={`text-base font-extrabold font-mono ${
+                outstanding > 0 ? 'text-rose-700' : 'text-emerald-700'
+              }`}
+            >
               {outstanding.toLocaleString()} {t.payment.etb}
             </span>
           </div>
+
+          {/* Notice when customer has 0 balance */}
+          {outstanding <= 0 && (
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex items-center gap-2 text-xs text-slate-600">
+              <AlertCircle className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+              <span>{t.payment.noDebtNotice}</span>
+            </div>
+          )}
 
           {/* Payment Amount Input */}
           <div>
@@ -149,19 +191,21 @@ function RecordCustomerPaymentContent() {
               <label htmlFor="payment-amount" className="text-xs font-semibold text-slate-700">
                 {t.payment.amountPaid} <span className="text-rose-500">*</span>
               </label>
-              {/* Quick Presets */}
+              {/* Quick Presets: 50% and 100% disabled when outstanding <= 0 */}
               <div className="flex items-center gap-1.5 text-[10px]">
                 <button
                   type="button"
+                  disabled={outstanding <= 0}
                   onClick={() => handleQuickPreset(0.5)}
-                  className="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium"
+                  className="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed text-slate-600 font-medium transition-opacity"
                 >
                   50%
                 </button>
                 <button
                   type="button"
+                  disabled={outstanding <= 0}
                   onClick={() => handleQuickPreset(1)}
-                  className="px-2 py-0.5 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-semibold"
+                  className="px-2 py-0.5 rounded-lg bg-emerald-100 hover:bg-emerald-200 disabled:opacity-40 disabled:cursor-not-allowed text-emerald-800 font-semibold transition-opacity"
                 >
                   100%
                 </button>
@@ -173,16 +217,24 @@ function RecordCustomerPaymentContent() {
               type="number"
               inputMode="decimal"
               min="1"
-              max={outstanding}
+              max={outstanding > 0 ? outstanding : 0}
+              disabled={outstanding <= 0}
               value={amount === 0 ? '' : amount}
-              onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
-              placeholder="e.g. 15000"
-              className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-900 font-bold focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900"
+              onChange={(e) => {
+                setAmount(parseFloat(e.target.value) || 0);
+                if (errors.amount) {
+                  const newErr = { ...errors };
+                  delete newErr.amount;
+                  setErrors(newErr);
+                }
+              }}
+              placeholder={outstanding <= 0 ? '0' : 'e.g. 15000'}
+              className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-900 font-bold focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 disabled:bg-slate-100 disabled:cursor-not-allowed disabled:text-slate-400"
             />
             {errors.amount && (
               <p className="text-[11px] text-rose-600 mt-1 leading-tight flex items-start gap-1 font-medium">
                 <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-                <span>{errors.amount}</span>
+                <span>{validationMessage(errors.amount, t)}</span>
               </p>
             )}
           </div>
@@ -195,8 +247,9 @@ function RecordCustomerPaymentContent() {
             <select
               id="customer-payment-method"
               value={paymentMethod}
+              disabled={outstanding <= 0}
               onChange={(e) => setPaymentMethod(e.target.value)}
-              className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-900 font-medium"
+              className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-900 font-medium disabled:bg-slate-100 disabled:text-slate-400"
             >
               <option value="Cash">Cash</option>
               <option value="Telebirr">Telebirr</option>
@@ -205,7 +258,7 @@ function RecordCustomerPaymentContent() {
             {errors.paymentMethod && (
               <p className="text-[11px] text-rose-600 mt-1 flex items-center gap-1 font-medium">
                 <AlertCircle className="w-3 h-3" />
-                {errors.paymentMethod}
+                {validationMessage(errors.paymentMethod, t)}
               </p>
             )}
           </div>
@@ -218,10 +271,11 @@ function RecordCustomerPaymentContent() {
             <input
               id="payment-reference"
               type="text"
+              disabled={outstanding <= 0}
               value={reference}
               onChange={(e) => setReference(e.target.value)}
               placeholder={t.payment.referencePlaceholder}
-              className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 font-mono"
+              className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 font-mono disabled:bg-slate-100 disabled:text-slate-400"
             />
           </div>
 
@@ -233,12 +287,12 @@ function RecordCustomerPaymentContent() {
             </span>
           </div>
 
-          {/* Submit Action Button */}
+          {/* Submit Action Button (Blocked/disabled when balance <= 0 or amount invalid) */}
           <div className="pt-2">
             <button
               type="submit"
-              disabled={isSubmitting}
-              className="w-full py-3 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2 active:scale-[0.99]"
+              disabled={isSubmitting || outstanding <= 0 || amount <= 0 || amount > outstanding}
+              className="w-full py-3 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2 active:scale-[0.99]"
             >
               {isSubmitting ? (
                 <>

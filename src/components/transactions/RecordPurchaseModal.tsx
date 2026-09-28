@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { X, PlusCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { useStockFlow } from '../../context/StockFlowContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { validationMessage } from '../../i18n/format';
 
 function RecordPurchaseContent() {
   const {
@@ -103,7 +104,7 @@ function RecordPurchaseContent() {
           {errors.general && (
             <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-2 text-xs text-rose-700">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              <span>{errors.general}</span>
+              <span>{validationMessage(errors.general, t)}</span>
             </div>
           )}
 
@@ -127,7 +128,7 @@ function RecordPurchaseContent() {
             {errors.productId && (
               <p className="text-[11px] text-rose-600 mt-1 flex items-center gap-1 font-medium">
                 <AlertCircle className="w-3 h-3" />
-                {errors.productId}
+                {validationMessage(errors.productId, t)}
               </p>
             )}
             {selectedProduct && (
@@ -158,7 +159,7 @@ function RecordPurchaseContent() {
             {errors.quantityCartons && (
               <p className="text-[11px] text-rose-600 mt-1 flex items-center gap-1 font-medium">
                 <AlertCircle className="w-3 h-3" />
-                {errors.quantityCartons}
+                {validationMessage(errors.quantityCartons, t)}
               </p>
             )}
           </div>
@@ -180,7 +181,7 @@ function RecordPurchaseContent() {
             {errors.costPerCarton && (
               <p className="text-[11px] text-rose-600 mt-1 flex items-center gap-1 font-medium">
                 <AlertCircle className="w-3 h-3" />
-                {errors.costPerCarton}
+                {validationMessage(errors.costPerCarton, t)}
               </p>
             )}
           </div>
@@ -212,8 +213,8 @@ function RecordPurchaseContent() {
           <div className="pt-2">
             <button
               type="submit"
-              disabled={isSubmitting}
-              className="w-full py-3 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2 active:scale-[0.99]"
+              disabled={isSubmitting || !productId || quantityCartons <= 0 || costPerCarton < 0}
+              className="w-full py-3 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2 active:scale-[0.99]"
             >
               {isSubmitting ? (
                 <>

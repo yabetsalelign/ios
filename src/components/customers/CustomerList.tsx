@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Search, ChevronRight, Users, ArrowUpDown, X } from 'lucide-react';
+import { Search, ChevronRight, Users, ArrowUpDown, X, Plus } from 'lucide-react';
 import { useStockFlow } from '../../context/StockFlowContext';
 import { useLanguage } from '../../context/LanguageContext';
+import CustomerFormModal from './CustomerFormModal';
 
 export default function CustomerList() {
   const { customers, getCustomerSummary, setSelectedCustomerId } = useStockFlow();
@@ -11,6 +12,7 @@ export default function CustomerList() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterDebtOnly, setFilterDebtOnly] = useState(false);
+  const [isAddOpen, setIsAddOpen] = useState(false);
 
   const filteredCustomers = useMemo(() => {
     return customers.filter((c) => {
@@ -37,6 +39,14 @@ export default function CustomerList() {
           <h1 className="text-xl font-bold text-slate-900 tracking-tight">{t.customers.title}</h1>
           <p className="text-xs text-slate-500">{t.customers.subtitle}</p>
         </div>
+        <button
+          type="button"
+          onClick={() => setIsAddOpen(true)}
+          className="h-9 px-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl flex items-center gap-1.5 text-xs font-semibold shadow-2xs transition-all active:scale-[0.98]"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          <span>{t.sale.addCustomer}</span>
+        </button>
       </div>
 
       {/* Search Bar with filter toggle */}
@@ -136,6 +146,14 @@ export default function CustomerList() {
           })
         )}
       </div>
+      <CustomerFormModal
+        isOpen={isAddOpen}
+        onClose={() => setIsAddOpen(false)}
+        onCustomerCreated={(c) => {
+          setSelectedCustomerId(c.id);
+          setIsAddOpen(false);
+        }}
+      />
     </div>
   );
 }

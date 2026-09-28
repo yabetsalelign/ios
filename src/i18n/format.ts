@@ -46,6 +46,8 @@ export function validationMessage(code: string, t: Translations): string {
       return t.validation.paymentExceedsBalance(Number(a) || 0);
     case 'costNegative':
       return t.validation.costNegative;
+    case 'saleTotalZero':
+      return t.validation.saleTotalZero;
     case 'unauthorized':
       return t.validation.unauthorized;
     default:
