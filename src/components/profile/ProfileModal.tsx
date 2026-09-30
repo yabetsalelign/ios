@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { X, ShieldCheck, Package, Globe, LogOut, CheckCircle2, Sliders, Smartphone } from 'lucide-react';
+import { X, ShieldCheck, Package, Globe, LogOut, CheckCircle2, Sliders } from 'lucide-react';
 import { useStockFlow } from '../../context/StockFlowContext';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -11,8 +11,6 @@ export default function ProfileModal() {
     setIsProfileOpen,
     currentUser,
     logout,
-    isPreviewMobileFrame,
-    setIsPreviewMobileFrame,
   } = useStockFlow();
   const { language, setLanguage, t } = useLanguage();
 
@@ -151,24 +149,6 @@ export default function ProfileModal() {
             </span>
           </div>
 
-          {/* Developer layout preview toggle in settings */}
-          <div className="flex items-center justify-between py-1 text-slate-600 pt-1 border-t border-slate-100">
-            <span className="flex items-center gap-1.5">
-              <Smartphone className="w-3.5 h-3.5 text-slate-400" />
-              <span>Developer iPhone Frame</span>
-            </span>
-            <button
-              type="button"
-              onClick={() => setIsPreviewMobileFrame((prev) => !prev)}
-              className={`px-2.5 py-1 rounded-lg font-semibold text-[11px] transition-colors ${
-                isPreviewMobileFrame
-                  ? 'bg-slate-900 text-white'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-              }`}
-            >
-              {isPreviewMobileFrame ? 'Active' : 'Off'}
-            </button>
-          </div>
         </div>
 
         {/* Sign Out / Logout Action */}

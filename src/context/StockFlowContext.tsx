@@ -87,10 +87,6 @@ interface StockFlowContextValue {
   successFeedback: TransactionSuccessFeedback | null;
   setSuccessFeedback: (feedback: TransactionSuccessFeedback | null) => void;
 
-  // Development Preview Mode
-  isPreviewMobileFrame: boolean;
-  setIsPreviewMobileFrame: (val: boolean | ((prev: boolean) => boolean)) => void;
-
   // Data & Calculations
   products: Product[];
   customers: Customer[];
@@ -146,7 +142,6 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
   const [preselectedCustomerId, setPreselectedCustomerId] = useState<string | null>(null);
   const [preselectedProductId, setPreselectedProductId] = useState<string | null>(null);
   const [successFeedback, setSuccessFeedback] = useState<TransactionSuccessFeedback | null>(null);
-  const [isPreviewMobileFrame, setIsPreviewMobileFrame] = useState(false);
   const [toast, setToast] = useState<ToastNotification | null>(null);
 
   const showToast = useCallback((notification: Omit<ToastNotification, 'id'>) => {
@@ -648,9 +643,9 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
   // TRANSACTION WORKFLOW 2: RECORD CUSTOMER PAYMENT
   // ==========================================
   const executePayment = async (input: CustomerPaymentFormInput) => {
-    // Manager-only enforced client-side AND by the RPC (record_customer_payment raises exception for non-managers)
-    if (currentUser.role !== 'manager') {
-      return { success: false, validationErrors: { general: 'Unauthorized: Only Managers can record payments.' } };
+    // Manager and Warehouse staff can record customer payments
+    if (currentUser.role !== 'manager' && currentUser.role !== 'warehouse') {
+      return { success: false, validationErrors: { general: 'Unauthorized: Only Managers and Warehouse staff can record payments.' } };
     }
 
     const customerSummary = calculateCustomerFinancials(input.customerId, rawTransactions);
@@ -1182,8 +1177,6 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
     setPreselectedProductId,
     successFeedback,
     setSuccessFeedback,
-    isPreviewMobileFrame,
-    setIsPreviewMobileFrame,
     products,
     customers,
     rawTransactions,

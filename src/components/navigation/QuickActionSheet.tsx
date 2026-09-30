@@ -65,22 +65,20 @@ export default function QuickActionSheet() {
 
         {/* Action List */}
         <div className="mt-4 space-y-2.5">
-          {isManager && (
-            <button
-              type="button"
-              onClick={() => handleSelectAction('sale')}
-              className="w-full text-left p-4 rounded-2xl border border-slate-100 bg-slate-50/60 hover:bg-blue-50/50 hover:border-blue-200 flex items-center gap-4 group active:scale-95 transition-transform duration-100 ease-in-out touch-manipulation"
-            >
-              <div className="w-11 h-11 rounded-xl bg-blue-100/80 text-blue-600 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
-                <ShoppingBag className="w-5 h-5 stroke-[2.2px]" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-sm text-slate-900 group-hover:text-blue-900">{t.quickAction.sell}</h3>
-                <p className="text-xs text-slate-500 mt-0.5 leading-snug">{t.quickAction.sellSub}</p>
-              </div>
-              <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all flex-shrink-0" />
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => handleSelectAction('sale')}
+            className="w-full text-left p-4 rounded-2xl border border-slate-100 bg-slate-50/60 hover:bg-blue-50/50 hover:border-blue-200 flex items-center gap-4 group active:scale-95 transition-transform duration-100 ease-in-out touch-manipulation"
+          >
+            <div className="w-11 h-11 rounded-xl bg-blue-100/80 text-blue-600 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+              <ShoppingBag className="w-5 h-5 stroke-[2.2px]" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-sm text-slate-900 group-hover:text-blue-900">{t.quickAction.sell}</h3>
+              <p className="text-xs text-slate-500 mt-0.5 leading-snug">{t.quickAction.sellSub}</p>
+            </div>
+            <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+          </button>
 
           <button
             type="button"
@@ -97,22 +95,20 @@ export default function QuickActionSheet() {
             <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-600 group-hover:translate-x-0.5 transition-all flex-shrink-0" />
           </button>
 
-          {isManager && (
-            <button
-              type="button"
-              onClick={() => handleSelectAction('payment')}
-              className="w-full text-left p-4 rounded-2xl border border-slate-100 bg-slate-50/60 hover:bg-amber-50/50 hover:border-amber-200 flex items-center gap-4 group active:scale-95 transition-transform duration-100 ease-in-out touch-manipulation"
-            >
-              <div className="w-11 h-11 rounded-xl bg-amber-100/80 text-amber-700 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
-                <CreditCard className="w-5 h-5 stroke-[2.2px]" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-sm text-slate-900 group-hover:text-amber-900">{t.quickAction.customerPaid}</h3>
-                <p className="text-xs text-slate-500 mt-0.5 leading-snug">{t.quickAction.customerPaidSub}</p>
-              </div>
-              <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-amber-600 group-hover:translate-x-0.5 transition-all flex-shrink-0" />
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => handleSelectAction('payment')}
+            className="w-full text-left p-4 rounded-2xl border border-slate-100 bg-slate-50/60 hover:bg-amber-50/50 hover:border-amber-200 flex items-center gap-4 group active:scale-95 transition-transform duration-100 ease-in-out touch-manipulation"
+          >
+            <div className="w-11 h-11 rounded-xl bg-amber-100/80 text-amber-700 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+              <CreditCard className="w-5 h-5 stroke-[2.2px]" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-sm text-slate-900 group-hover:text-amber-900">{t.quickAction.customerPaid}</h3>
+              <p className="text-xs text-slate-500 mt-0.5 leading-snug">{t.quickAction.customerPaidSub}</p>
+            </div>
+            <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-amber-600 group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+          </button>
 
           {isManager && (
             <button

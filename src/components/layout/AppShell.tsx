@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Smartphone, Monitor } from 'lucide-react';
+
 import { useStockFlow } from '../../context/StockFlowContext';
 import { useLanguage } from '../../context/LanguageContext';
 import DesktopSidebar from './DesktopSidebar';
@@ -31,8 +31,6 @@ export default function AppShell() {
     selectedCustomerId,
     currentUser,
     setIsProfileOpen,
-    isPreviewMobileFrame,
-    setIsPreviewMobileFrame,
     toast,
     dismissToast,
   } = useStockFlow();
@@ -82,64 +80,12 @@ export default function AppShell() {
 
   return (
     <div className="min-h-screen bg-slate-100/60 flex">
-      {!isPreviewMobileFrame && !isEmbedded && <DesktopSidebar />}
+      {!isEmbedded && <DesktopSidebar />}
 
       <div className="flex-1 flex flex-col min-w-0 transition-all">
-        {!isPreviewMobileFrame && !isEmbedded && <DesktopHeader />}
+        {!isEmbedded && <DesktopHeader />}
 
-        {!isEmbedded && (
-          <aside
-            aria-label="Developer Preview Toolbar"
-            className="hidden md:flex fixed bottom-4 right-4 z-40 items-center gap-1.5 bg-slate-900/90 text-white backdrop-blur-md px-3 py-1.5 rounded-full border border-slate-800 shadow-lg text-xs"
-          >
-            <span className="text-slate-400 font-medium text-[11px]">
-              Preview:
-            </span>
-
-            <button
-              type="button"
-              onClick={() => setIsPreviewMobileFrame(false)}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all ${!isPreviewMobileFrame
-                  ? 'bg-white text-slate-950 shadow-2xs font-bold'
-                  : 'text-slate-300 hover:text-white'
-                }`}
-            >
-              <Monitor className="w-3.5 h-3.5" />
-              <span>Desktop</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setIsPreviewMobileFrame(true)}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all ${isPreviewMobileFrame
-                  ? 'bg-white text-slate-950 shadow-2xs font-bold'
-                  : 'text-slate-300 hover:text-white'
-                }`}
-            >
-              <Smartphone className="w-3.5 h-3.5" />
-              <span>iPhone 390px</span>
-            </button>
-          </aside>
-        )}
-
-        {isPreviewMobileFrame && !isEmbedded ? (
-          <div className="flex-1 flex flex-col items-center justify-center py-6 px-4">
-            <div className="relative w-[390px] h-[844px] max-h-[88vh] rounded-[52px] border-[10px] border-slate-900 shadow-2xl overflow-hidden bg-slate-900 flex flex-col">
-              <div className="absolute top-2.5 left-1/2 -translate-x-1/2 w-28 h-6 bg-slate-900 rounded-full z-30 pointer-events-none" />
-
-              <iframe
-                src="/?preview=mobile"
-                title="StockFlow Mobile Preview"
-                className="w-full flex-1 border-0 bg-slate-50"
-              />
-            </div>
-
-            <p className="text-xs text-slate-500 mt-3 font-medium text-center">
-              Authoritative 390×844 mobile preview.
-            </p>
-          </div>
-        ) : (
-          <main className="w-full min-h-screen flex flex-col bg-slate-50/70 relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-6">
+        <main className="w-full min-h-screen flex flex-col bg-slate-50/70 relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-6">
             <div
               className="lg:hidden flex items-center justify-between pb-3 border-b border-slate-200/80 mb-4"
               style={{
@@ -204,7 +150,6 @@ export default function AppShell() {
 
             <BottomNavigation />
           </main>
-        )}
       </div>
 
       <ProfileModal />
