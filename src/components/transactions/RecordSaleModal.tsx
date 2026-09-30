@@ -330,17 +330,19 @@ function RecordSaleContent() {
                 </p>
               )}
 
-              {/* Selected Customer Card Preview */}
+              {/* Selected Customer Compact Confirmation */}
               {selectedCustomer && (
-                <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/80 flex items-center justify-between text-xs">
-                  <div className="min-w-0 pr-2">
-                    <div className="font-bold text-slate-900 truncate">{selectedCustomer.name}</div>
+                <div className="flex items-center justify-between px-3 py-2 bg-slate-50 border border-slate-200/70 rounded-xl text-xs">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="font-bold text-slate-900 truncate">{selectedCustomer.name}</span>
                     {selectedCustomer.phone && (
-                      <div className="text-[11px] text-slate-400 font-mono">{selectedCustomer.phone}</div>
+                      <span className="text-[11px] text-slate-400 font-mono hidden sm:inline">
+                        {selectedCustomer.phone}
+                      </span>
                     )}
                   </div>
-                  <div className="text-right flex-shrink-0">
-                    <span className="text-[11px] text-slate-500 block">{t.sale.currentOwes}:</span>
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <span className="text-[11px] text-slate-500">{t.sale.currentOwes}:</span>
                     <span
                       className={`font-mono font-bold text-xs ${
                         selectedCustomerSummary && selectedCustomerSummary.outstandingBalance > 0
@@ -435,7 +437,7 @@ function RecordSaleContent() {
                           <option value="">-- Select a product --</option>
                           {filteredProducts.map((p) => (
                             <option key={p.id} value={p.id}>
-                              {p.name} (SKU: {p.sku}) — {p.currentStockCartons} {t.inventory.cartons} {t.inventory.inStock}
+                              {p.name} — {p.currentStockCartons} {t.inventory.cartons} {t.inventory.inStock} (SKU: {p.sku})
                             </option>
                           ))}
                         </select>
@@ -447,10 +449,13 @@ function RecordSaleContent() {
                           </p>
                         )}
 
-                        {/* Selected Product Info Badge (Product name, stock, catalog price) */}
+                        {/* Selected Product Info Badge (Product name prominent, SKU secondary) */}
                         {selectedProd && (
                           <div className="p-2.5 bg-white rounded-xl border border-slate-200/90 text-xs space-y-1 shadow-2xs">
-                            <div className="font-bold text-slate-900">{selectedProd.name}</div>
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="font-bold text-slate-900 truncate">{selectedProd.name}</div>
+                              <div className="text-[10px] text-slate-400 font-mono flex-shrink-0">SKU: {selectedProd.sku}</div>
+                            </div>
                             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px]">
                               <span
                                 className={
@@ -489,29 +494,41 @@ function RecordSaleContent() {
                           <label className="block text-[10px] font-semibold text-slate-600 mb-0.5">
                             {t.sale.howManyCartons}
                           </label>
-                          <input
-                            type="number"
-                            inputMode="numeric"
-                            min="1"
-                            max={selectedProd ? selectedProd.currentStockCartons : undefined}
-                            value={item.quantityCartons || ''}
-                            onChange={(e) => handleQuantityChange(idx, e.target.value)}
-                            className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-900 font-semibold"
-                          />
-                          {quantityError && (
-                            <p className="text-[10px] text-rose-600 mt-0.5 leading-tight flex items-start gap-1">
-                              <AlertCircle className="w-3 h-3 flex-shrink-0 mt-0.5" />
-                              <span>{validationMessage(quantityError, t)}</span>
-                            </p>
-                          )}
-                          {selectedProd && item.quantityCartons > selectedProd.currentStockCartons && (
-                            <p className="text-[10px] text-rose-600 mt-0.5 leading-tight flex items-start gap-1">
-                              <AlertCircle className="w-3 h-3 flex-shrink-0 mt-0.5" />
-                              <span>
-                                Cannot exceed stock ({selectedProd.currentStockCartons} available)
-                              </span>
-                            </p>
-                          )}
+                          {(() => {
+                            const isExceedingStock = Boolean(
+                              selectedProd && item.quantityCartons > selectedProd.currentStockCartons
+                            );
+                            return (
+                              <>
+                                <input
+                                  type="number"
+                                  inputMode="numeric"
+                                  min="1"
+                                  value={item.quantityCartons || ''}
+                                  onChange={(e) => handleQuantityChange(idx, e.target.value)}
+                                  className={`w-full bg-white border ${
+                                    isExceedingStock || quantityError
+                                      ? 'border-rose-400 focus:ring-rose-400 bg-rose-50/40 text-rose-900'
+                                      : 'border-slate-200 focus:ring-slate-900/10 focus:border-slate-900'
+                                  } rounded-xl px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:ring-2 transition-all`}
+                                />
+                                {isExceedingStock && selectedProd && (
+                                  <p className="text-[10px] text-rose-600 font-semibold mt-1 leading-tight flex items-start gap-1">
+                                    <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                                    <span>
+                                      {t.validation.insufficientStock(selectedProd.currentStockCartons)}
+                                    </span>
+                                  </p>
+                                )}
+                                {!isExceedingStock && quantityError && (
+                                  <p className="text-[10px] text-rose-600 mt-0.5 leading-tight flex items-start gap-1">
+                                    <AlertCircle className="w-3 h-3 flex-shrink-0 mt-0.5" />
+                                    <span>{validationMessage(quantityError, t)}</span>
+                                  </p>
+                                )}
+                              </>
+                            );
+                          })()}
                         </div>
 
                         <div>

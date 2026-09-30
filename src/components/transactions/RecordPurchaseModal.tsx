@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, PlusCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { useStockFlow } from '../../context/StockFlowContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -25,6 +25,22 @@ function RecordPurchaseContent() {
   const [supplierName, setSupplierName] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Ensure cost is automatically pre-filled from catalog when product is selected or loads
+  useEffect(() => {
+    if (productId) {
+      const prod = products.find((p) => p.id === productId);
+      if (prod && (costPerCarton === 0 || !costPerCarton) && prod.costPerCarton > 0) {
+        setCostPerCarton(prod.costPerCarton);
+      }
+    } else if (products.length > 0) {
+      const target = preselectedProductId ? products.find((p) => p.id === preselectedProductId) : products[0];
+      if (target) {
+        setProductId(target.id);
+        setCostPerCarton(target.costPerCarton);
+      }
+    }
+  }, [products, productId, preselectedProductId, costPerCarton]);
 
   const selectedProduct = products.find((p) => p.id === productId);
   const totalCost = (quantityCartons || 0) * (costPerCarton || 0);
@@ -121,7 +137,7 @@ function RecordPurchaseContent() {
             >
               {products.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.name} (SKU: {p.sku}) — {t.purchase.currentStock}: {p.currentStockCartons} {t.inventory.cartons}
+                  {p.name} — {t.purchase.currentStock}: {p.currentStockCartons} {t.inventory.cartons} (SKU: {p.sku})
                 </option>
               ))}
             </select>
