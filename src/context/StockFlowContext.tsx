@@ -62,6 +62,7 @@ interface StockFlowContextValue {
   isFirstTimeSetup: boolean;
   invitedEmail: string | null;
   completeFirstTimeSetup: (password: string) => Promise<{ success: boolean; error?: string }>;
+  requestAccountSetup: (email: string) => Promise<{ success: boolean; error?: string }>;
   login: (email: string, password?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void> | void;
   isProfileOpen: boolean;
@@ -437,6 +438,50 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
       return { success: true };
     } catch (err: any) {
       return { success: false, error: err.message || 'Error completing setup' };
+    }
+  };
+
+  // ==========================================
+  // ACCOUNT SETUP / RECOVERY (existing Auth account)
+  // ==========================================
+  // Sends a Supabase password-reset email so an existing Auth account can
+  // establish or replace its password without creating a duplicate user.
+  //
+  // Security guarantees:
+  //   - Never creates a second Auth user for an already-registered email.
+  //   - Always returns generic success copy to avoid account-enumeration leaks.
+  //   - Does not accept, store, or forward a role value.
+  //   - The recovery link and token are validated entirely by Supabase Auth.
+  //   - The redirect URL must match an allowed redirect configured in Supabase.
+  const requestAccountSetup = async (email: string): Promise<{ success: boolean; error?: string }> => {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail) {
+      return { success: false, error: 'Please enter your email address.' };
+    }
+
+    try {
+      // resetPasswordForEmail works for existing accounts and sends a secure
+      // recovery link. For non-existent emails Supabase silently no-ops,
+      // so the response cannot be used to enumerate accounts.
+      const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
+        // Redirect back to the same app root so onAuthStateChange can detect
+        // the PASSWORD_RECOVERY event and show the Create Password screen.
+        redirectTo: typeof window !== 'undefined' ? window.location.origin : undefined,
+      });
+
+      if (error) {
+        // Surface only unexpected/transport errors; do not expose "user not found"
+        // messages from Supabase as they would be an enumeration oracle.
+        console.error('requestAccountSetup error:', error);
+      }
+
+      // Always return a generic success so the UI can show a safe message.
+      // Whether the email exists or not, the user-facing copy is identical.
+      return { success: true };
+    } catch (err: any) {
+      console.error('requestAccountSetup unexpected error:', err);
+      // Do not expose internal details to the caller.
+      return { success: true };
     }
   };
 
@@ -1264,6 +1309,7 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
     isFirstTimeSetup,
     invitedEmail,
     completeFirstTimeSetup,
+    requestAccountSetup,
     login,
     logout,
     isProfileOpen,
