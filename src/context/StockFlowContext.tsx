@@ -479,9 +479,9 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
   // TRANSACTION WORKFLOW 1: RECORD SALE
   // ==========================================
   const executeSale = async (input: SaleFormInput) => {
-    // 1. Role permission enforcement (Manager and Warehouse can record Stock Out / sales)
-    if (currentUser.role !== 'manager' && currentUser.role !== 'warehouse') {
-      return { success: false, validationErrors: { general: 'Unauthorized: Only Managers and Warehouse staff can record sales.' } };
+    // 1. Role permission enforcement (Manager only can record sales)
+    if (currentUser.role !== 'manager') {
+      return { success: false, validationErrors: { general: 'Unauthorized: Only Managers can record sales.' } };
     }
 
     // 2. Build stock lookup map for pure validator
@@ -643,9 +643,9 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
   // TRANSACTION WORKFLOW 2: RECORD CUSTOMER PAYMENT
   // ==========================================
   const executePayment = async (input: CustomerPaymentFormInput) => {
-    // Manager and Warehouse staff can record customer payments
-    if (currentUser.role !== 'manager' && currentUser.role !== 'warehouse') {
-      return { success: false, validationErrors: { general: 'Unauthorized: Only Managers and Warehouse staff can record payments.' } };
+    // Manager only can record customer payments
+    if (currentUser.role !== 'manager') {
+      return { success: false, validationErrors: { general: 'Unauthorized: Only Managers can record payments.' } };
     }
 
     const customerSummary = calculateCustomerFinancials(input.customerId, rawTransactions);
