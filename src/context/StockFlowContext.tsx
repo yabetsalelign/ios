@@ -59,6 +59,9 @@ interface StockFlowContextValue {
   currentUser: User;
   isAuthenticated: boolean;
   isHydrated: boolean;
+  isFirstTimeSetup: boolean;
+  invitedEmail: string | null;
+  completeFirstTimeSetup: (password: string) => Promise<{ success: boolean; error?: string }>;
   login: (email: string, password?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void> | void;
   isProfileOpen: boolean;
@@ -132,6 +135,8 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [currentUser, setCurrentUser] = useState<User>(BLANK_USER);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [isFirstTimeSetup, setIsFirstTimeSetup] = useState<boolean>(false);
+  const [invitedEmail, setInvitedEmail] = useState<string | null>(null);
 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
@@ -291,24 +296,42 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
       setIsAuthenticated(true);
     };
 
+    const checkIsInviteOrRecoveryUrl = () => {
+      if (typeof window === 'undefined') return false;
+      const hash = window.location.hash || '';
+      const search = window.location.search || '';
+      return (
+        hash.includes('type=invite') ||
+        hash.includes('type=recovery') ||
+        search.includes('type=invite') ||
+        search.includes('type=recovery')
+      );
+    };
+
     const initAuth = async () => {
       try {
+        const isInvite = checkIsInviteOrRecoveryUrl();
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         if (sessionError) {
           console.error('Error fetching Supabase session:', sessionError);
         }
         if (session?.user && isMounted) {
-          const { data: profile, error: profileError } = (await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single()) as { data: ProfileRow | null; error: any };
+          if (isInvite) {
+            setIsFirstTimeSetup(true);
+            setInvitedEmail(session.user.email || null);
+          } else {
+            const { data: profile, error: profileError } = (await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', session.user.id)
+              .single()) as { data: ProfileRow | null; error: any };
 
-          if (profile) {
-            applyProfile(profile, session.user.email || '');
-            await loadSupabaseData();
-          } else if (profileError) {
-            console.error('Error loading profile during session restore:', profileError);
+            if (profile) {
+              applyProfile(profile, session.user.email || '');
+              await loadSupabaseData();
+            } else if (profileError) {
+              console.error('Error loading profile during session restore:', profileError);
+            }
           }
         }
       } catch (err) {
@@ -323,24 +346,33 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!isMounted) return;
 
-      if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session?.user) {
-        try {
-          const { data: profile } = (await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single()) as { data: ProfileRow | null; error: any };
+      if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && checkIsInviteOrRecoveryUrl())) {
+        if (session?.user) {
+          setIsFirstTimeSetup(true);
+          setInvitedEmail(session.user.email || null);
+        }
+      } else if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session?.user) {
+        if (!isFirstTimeSetup) {
+          try {
+            const { data: profile } = (await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', session.user.id)
+              .single()) as { data: ProfileRow | null; error: any };
 
-          if (profile) {
-            applyProfile(profile, session.user.email || '');
-            await loadSupabaseData();
+            if (profile) {
+              applyProfile(profile, session.user.email || '');
+              await loadSupabaseData();
+            }
+          } catch (err) {
+            console.error('Failed to load profile on auth change:', err);
           }
-        } catch (err) {
-          console.error('Failed to load profile on auth change:', err);
         }
       } else if (event === 'SIGNED_OUT') {
         // Clear all runtime data on sign-out
         setIsAuthenticated(false);
+        setIsFirstTimeSetup(false);
+        setInvitedEmail(null);
         setCurrentUser(BLANK_USER);
         setProducts([]);
         setCustomers([]);
@@ -353,7 +385,60 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [loadSupabaseData]);
+  }, [isFirstTimeSetup, loadSupabaseData]);
+
+  const completeFirstTimeSetup = async (password: string): Promise<{ success: boolean; error?: string }> => {
+    const cleanPassword = password.trim();
+    if (!cleanPassword || cleanPassword.length < 6) {
+      return { success: false, error: 'Password must be at least 6 characters.' };
+    }
+
+    try {
+      const { data, error } = await supabase.auth.updateUser({
+        password: cleanPassword,
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      if (!data.user) {
+        return { success: false, error: 'Failed to set password.' };
+      }
+
+      // Clear tokens from URL bar cleanly
+      if (typeof window !== 'undefined' && window.history?.replaceState) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+
+      // Fetch profile to verify role from database
+      const { data: profile } = (await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', data.user.id)
+        .single()) as { data: ProfileRow | null; error: any };
+
+      if (profile) {
+        setCurrentUser({
+          id: profile.id,
+          name: profile.full_name,
+          email: data.user.email || '',
+          role: profile.role,
+          avatarUrl: profile.avatar_url || (profile.role === 'manager'
+            ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=128&auto=format&fit=crop&q=80'
+            : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=128&auto=format&fit=crop&q=80'),
+        });
+      }
+
+      setIsFirstTimeSetup(false);
+      setIsAuthenticated(true);
+      setActiveTab('home');
+      await loadSupabaseData();
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Error completing setup' };
+    }
+  };
 
   const login = async (email: string, password?: string): Promise<{ success: boolean; error?: string }> => {
     const cleanEmail = email.trim().toLowerCase();
@@ -479,9 +564,9 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
   // TRANSACTION WORKFLOW 1: RECORD SALE
   // ==========================================
   const executeSale = async (input: SaleFormInput) => {
-    // 1. Role permission enforcement (Manager only can record sales)
-    if (currentUser.role !== 'manager') {
-      return { success: false, validationErrors: { general: 'Unauthorized: Only Managers can record sales.' } };
+    // 1. Role permission enforcement (Manager and Warehouse can record sales)
+    if (currentUser.role !== 'manager' && currentUser.role !== 'warehouse') {
+      return { success: false, validationErrors: { general: 'Unauthorized: Only Managers and Warehouse staff can record sales.' } };
     }
 
     // 2. Build stock lookup map for pure validator
@@ -643,15 +728,30 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
   // TRANSACTION WORKFLOW 2: RECORD CUSTOMER PAYMENT
   // ==========================================
   const executePayment = async (input: CustomerPaymentFormInput) => {
-    // Manager only can record customer payments
-    if (currentUser.role !== 'manager') {
-      return { success: false, validationErrors: { general: 'Unauthorized: Only Managers can record payments.' } };
+    // Manager and Warehouse staff can record customer payments
+    if (currentUser.role !== 'manager' && currentUser.role !== 'warehouse') {
+      return { success: false, validationErrors: { general: 'Unauthorized: Only Managers and Warehouse staff can record payments.' } };
     }
 
     const customerSummary = calculateCustomerFinancials(input.customerId, rawTransactions);
-    const validation = validateCustomerPayment(input, customerSummary.outstandingBalance);
-    if (!validation.isValid) {
-      return { success: false, validationErrors: validation.errors };
+
+    if (currentUser.role === 'manager') {
+      const validation = validateCustomerPayment(input, customerSummary.outstandingBalance);
+      if (!validation.isValid) {
+        return { success: false, validationErrors: validation.errors };
+      }
+    } else {
+      // For warehouse staff, financial ledger is restricted by RLS.
+      // We validate required fields client-side; authoritative balance check runs in the backend RPC.
+      if (!input.customerId || input.customerId.trim() === '') {
+        return { success: false, validationErrors: { customerId: 'chooseCustomer' } };
+      }
+      if (!input.amount || input.amount <= 0) {
+        return { success: false, validationErrors: { amount: 'enterPaymentAmount' } };
+      }
+      if (!input.paymentMethod || input.paymentMethod.trim() === '') {
+        return { success: false, validationErrors: { paymentMethod: 'choosePaymentMethod' } };
+      }
     }
 
     const customer = customers.find((c) => c.id === input.customerId);
@@ -678,19 +778,23 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
         const payRef = result.reference;
         const newBalance = result.remaining_balance;
 
+        const details = [
+          `Reference: ${payRef}`,
+          `Customer: ${customerName}`,
+          `Amount Received: ${result.amount.toLocaleString()} ETB`,
+          `Payment Method: ${input.paymentMethod}${input.reference ? ` (${input.reference})` : ''}`,
+        ];
+        if (currentUser.role === 'manager') {
+          details.push(`Previous Balance: ${customerSummary.outstandingBalance.toLocaleString()} ETB`);
+          details.push(`Remaining Balance: ${newBalance.toLocaleString()} ETB`);
+        }
+        details.push(`Physical Inventory: Strictly unaffected (financial ledger update only)`);
+
         setSuccessFeedback({
           type: 'payment',
           reference: payRef,
           title: 'Payment Recorded Successfully',
-          details: [
-            `Reference: ${payRef}`,
-            `Customer: ${customerName}`,
-            `Amount Received: ${result.amount.toLocaleString()} ETB`,
-            `Payment Method: ${input.paymentMethod}${input.reference ? ` (${input.reference})` : ''}`,
-            `Previous Balance: ${customerSummary.outstandingBalance.toLocaleString()} ETB`,
-            `Remaining Balance: ${newBalance.toLocaleString()} ETB`,
-            `Physical Inventory: Strictly unaffected (financial ledger update only)`,
-          ],
+          details,
         });
 
         await loadSupabaseData();
@@ -1157,6 +1261,9 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
     currentUser,
     isAuthenticated,
     isHydrated,
+    isFirstTimeSetup,
+    invitedEmail,
+    completeFirstTimeSetup,
     login,
     logout,
     isProfileOpen,

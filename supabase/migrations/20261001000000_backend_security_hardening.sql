@@ -7,8 +7,8 @@
 --   3. Explicitly deny all direct client INSERT/UPDATE/DELETE on ledger, sales,
 --      sale_items, purchases, and inventory_transactions
 --   4. Lock down profiles: no client insert/update/delete; role promotion disabled
---   5. Harden RPCs: record_sale (manager-only, stock validation, payment check),
---      record_customer_payment (manager-only, outstanding balance check),
+--   5. Harden RPCs: record_sale (manager & warehouse, stock validation, payment check),
+--      record_customer_payment (manager & warehouse, outstanding balance check),
 --      record_purchase (manager & warehouse, input validation)
 --   6. Enforce explicit safe search_path = pg_catalog, public on all RPCs
 --   7. Add targeted data integrity constraints preventing corruption
@@ -420,10 +420,10 @@ create policy "product_images_delete_manager"
 -- 5. HARDENED RPC FUNCTIONS
 -- ─────────────────────────────────────────────
 
--- 5.1 record_sale (MANAGER ONLY)
+-- 5.1 record_sale (MANAGER & WAREHOUSE)
 -- Requirements:
 -- - Reject unauthenticated calls
--- - Reject warehouse calls (strictly manager only)
+-- - Permit both manager and warehouse roles
 -- - Validate customer exists
 -- - Validate items array and each item's quantity/price
 -- - Prevent negative/invalid quantities
@@ -461,10 +461,10 @@ begin
     raise exception 'Unauthorized: Authentication required.';
   end if;
 
-  -- 2. Verify caller role inside the database (MANAGER ONLY)
+  -- 2. Verify caller role inside the database (MANAGER & WAREHOUSE)
   select role into v_caller_role from public.profiles where id = v_caller_id;
-  if v_caller_role is null or v_caller_role != 'manager' then
-    raise exception 'Forbidden: Only managers are authorized to record sales.';
+  if v_caller_role is null or v_caller_role not in ('manager', 'warehouse') then
+    raise exception 'Forbidden: Insufficient privileges to record sale.';
   end if;
 
   -- 3. Validate customer exists
@@ -745,10 +745,10 @@ begin
 end;
 $$;
 
--- 5.3 record_customer_payment (MANAGER ONLY)
+-- 5.3 record_customer_payment (MANAGER & WAREHOUSE)
 -- Requirements:
 -- - Derive user from auth.uid()
--- - Strictly MANAGER ONLY (Warehouse callers must be rejected)
+-- - Permit both manager and warehouse roles
 -- - Validate customer exists
 -- - Validate payment amount > 0
 -- - Prevent payment amount greater than customer outstanding balance
@@ -779,10 +779,10 @@ begin
     raise exception 'Unauthorized: Authentication required.';
   end if;
 
-  -- 2. Verify caller role internally (MANAGER ONLY)
+  -- 2. Verify caller role internally (MANAGER & WAREHOUSE)
   select role into v_caller_role from public.profiles where id = v_caller_id;
-  if v_caller_role is null or v_caller_role != 'manager' then
-    raise exception 'Forbidden: Only managers are authorized to record customer payments.';
+  if v_caller_role is null or v_caller_role not in ('manager', 'warehouse') then
+    raise exception 'Forbidden: Insufficient privileges to record customer payment.';
   end if;
 
   -- 3. Validate customer exists

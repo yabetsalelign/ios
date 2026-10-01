@@ -14,8 +14,10 @@ function RecordCustomerPaymentContent() {
     setPreselectedCustomerId,
     getCustomerSummary,
     executePayment,
+    currentUser,
   } = useStockFlow();
   const { t } = useLanguage();
+  const isManager = currentUser.role === 'manager';
 
   const [customerId, setCustomerId] = useState<string>(() => preselectedCustomerId || customers[0]?.id || '');
   const [amount, setAmount] = useState<number>(0);
@@ -57,8 +59,8 @@ function RecordCustomerPaymentContent() {
     e.preventDefault();
     if (isSubmitting) return;
 
-    // Strict validation: customer with 0 balance cannot record payment
-    if (outstanding <= 0) {
+    // Strict validation: customer with 0 balance cannot record payment (Manager only, since warehouse has no ledger access)
+    if (isManager && outstanding <= 0) {
       setErrors({
         general: t.payment.noDebtNotice || 'This customer has no outstanding balance (0 ETB). Payments cannot be recorded.',
       });
@@ -70,7 +72,7 @@ function RecordCustomerPaymentContent() {
       return;
     }
 
-    if (amount > outstanding) {
+    if (isManager && amount > outstanding) {
       setErrors({ amount: `paymentExceedsBalance|${outstanding}` });
       return;
     }
@@ -152,7 +154,7 @@ function RecordCustomerPaymentContent() {
                 const sum = getCustomerSummary(c.id);
                 return (
                   <option key={c.id} value={c.id}>
-                    {c.name} — {t.payment.currentOwes}: {sum.outstandingBalance.toLocaleString()} {t.payment.etb}
+                    {c.name}{isManager ? ` — ${t.payment.currentOwes}: ${sum.outstandingBalance.toLocaleString()} ${t.payment.etb}` : ''}
                   </option>
                 );
               })}
@@ -165,20 +167,22 @@ function RecordCustomerPaymentContent() {
             )}
           </div>
 
-          {/* Current Outstanding Balance Display */}
-          <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-600">{t.payment.currentOwes}</span>
-            <span
-              className={`text-base font-extrabold font-mono ${
-                outstanding > 0 ? 'text-rose-700' : 'text-emerald-700'
-              }`}
-            >
-              {outstanding.toLocaleString()} {t.payment.etb}
-            </span>
-          </div>
+          {/* Current Outstanding Balance Display (Manager Only) */}
+          {isManager && (
+            <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-600">{t.payment.currentOwes}</span>
+              <span
+                className={`text-base font-extrabold font-mono ${
+                  outstanding > 0 ? 'text-rose-700' : 'text-emerald-700'
+                }`}
+              >
+                {outstanding.toLocaleString()} {t.payment.etb}
+              </span>
+            </div>
+          )}
 
-          {/* Notice when customer has 0 balance */}
-          {outstanding <= 0 && (
+          {/* Notice when customer has 0 balance (Manager Only) */}
+          {isManager && outstanding <= 0 && (
             <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex items-center gap-2 text-xs text-slate-600">
               <AlertCircle className="w-4 h-4 text-emerald-600 flex-shrink-0" />
               <span>{t.payment.noDebtNotice}</span>
@@ -191,25 +195,27 @@ function RecordCustomerPaymentContent() {
               <label htmlFor="payment-amount" className="text-xs font-semibold text-slate-700">
                 {t.payment.amountPaid} <span className="text-rose-500">*</span>
               </label>
-              {/* Quick Presets: 50% and 100% disabled when outstanding <= 0 */}
-              <div className="flex items-center gap-1.5 text-[10px]">
-                <button
-                  type="button"
-                  disabled={outstanding <= 0}
-                  onClick={() => handleQuickPreset(0.5)}
-                  className="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed text-slate-600 font-medium transition-opacity"
-                >
-                  50%
-                </button>
-                <button
-                  type="button"
-                  disabled={outstanding <= 0}
-                  onClick={() => handleQuickPreset(1)}
-                  className="px-2 py-0.5 rounded-lg bg-emerald-100 hover:bg-emerald-200 disabled:opacity-40 disabled:cursor-not-allowed text-emerald-800 font-semibold transition-opacity"
-                >
-                  100%
-                </button>
-              </div>
+              {/* Quick Presets: 50% and 100% (Manager only) */}
+              {isManager && (
+                <div className="flex items-center gap-1.5 text-[10px]">
+                  <button
+                    type="button"
+                    disabled={outstanding <= 0}
+                    onClick={() => handleQuickPreset(0.5)}
+                    className="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed text-slate-600 font-medium transition-opacity"
+                  >
+                    50%
+                  </button>
+                  <button
+                    type="button"
+                    disabled={outstanding <= 0}
+                    onClick={() => handleQuickPreset(1)}
+                    className="px-2 py-0.5 rounded-lg bg-emerald-100 hover:bg-emerald-200 disabled:opacity-40 disabled:cursor-not-allowed text-emerald-800 font-semibold transition-opacity"
+                  >
+                    100%
+                  </button>
+                </div>
+              )}
             </div>
 
             <input
@@ -217,8 +223,8 @@ function RecordCustomerPaymentContent() {
               type="number"
               inputMode="decimal"
               min="1"
-              max={outstanding > 0 ? outstanding : 0}
-              disabled={outstanding <= 0}
+              max={isManager && outstanding > 0 ? outstanding : undefined}
+              disabled={isManager && outstanding <= 0}
               value={amount === 0 ? '' : amount}
               onChange={(e) => {
                 setAmount(parseFloat(e.target.value) || 0);
@@ -228,7 +234,7 @@ function RecordCustomerPaymentContent() {
                   setErrors(newErr);
                 }
               }}
-              placeholder={outstanding <= 0 ? '0' : 'e.g. 15000'}
+              placeholder={isManager && outstanding <= 0 ? '0' : 'e.g. 15000'}
               className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-900 font-bold focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 disabled:bg-slate-100 disabled:cursor-not-allowed disabled:text-slate-400"
             />
             {errors.amount && (
@@ -247,7 +253,7 @@ function RecordCustomerPaymentContent() {
             <select
               id="customer-payment-method"
               value={paymentMethod}
-              disabled={outstanding <= 0}
+              disabled={isManager && outstanding <= 0}
               onChange={(e) => setPaymentMethod(e.target.value)}
               className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-900 font-medium disabled:bg-slate-100 disabled:text-slate-400"
             >
@@ -271,7 +277,7 @@ function RecordCustomerPaymentContent() {
             <input
               id="payment-reference"
               type="text"
-              disabled={outstanding <= 0}
+              disabled={isManager && outstanding <= 0}
               value={reference}
               onChange={(e) => setReference(e.target.value)}
               placeholder={t.payment.referencePlaceholder}
@@ -279,19 +285,21 @@ function RecordCustomerPaymentContent() {
             />
           </div>
 
-          {/* New Balance Preview */}
-          <div className="p-3.5 bg-emerald-50/80 border border-emerald-200/80 rounded-2xl flex items-center justify-between">
-            <span className="text-xs font-semibold text-emerald-900">{t.payment.newBalance}</span>
-            <span className="text-base font-extrabold text-emerald-900 font-mono">
-              {newBalance.toLocaleString()} {t.payment.etb}
-            </span>
-          </div>
+          {/* New Balance Preview (Manager Only) */}
+          {isManager && (
+            <div className="p-3.5 bg-emerald-50/80 border border-emerald-200/80 rounded-2xl flex items-center justify-between">
+              <span className="text-xs font-semibold text-emerald-900">{t.payment.newBalance}</span>
+              <span className="text-base font-extrabold text-emerald-900 font-mono">
+                {newBalance.toLocaleString()} {t.payment.etb}
+              </span>
+            </div>
+          )}
 
-          {/* Submit Action Button (Blocked/disabled when balance <= 0 or amount invalid) */}
+          {/* Submit Action Button */}
           <div className="pt-2">
             <button
               type="submit"
-              disabled={isSubmitting || outstanding <= 0 || amount <= 0 || amount > outstanding}
+              disabled={isSubmitting || (isManager && (outstanding <= 0 || amount <= 0 || amount > outstanding)) || (!isManager && amount <= 0)}
               className="w-full py-3 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2 active:scale-[0.99]"
             >
               {isSubmitting ? (

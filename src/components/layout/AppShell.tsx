@@ -27,6 +27,7 @@ export default function AppShell() {
   const {
     isAuthenticated,
     isHydrated,
+    isFirstTimeSetup,
     activeTab,
     selectedCustomerId,
     currentUser,
@@ -55,7 +56,7 @@ export default function AppShell() {
     return null;
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || isFirstTimeSetup) {
     return <LoginView />;
   }
 
