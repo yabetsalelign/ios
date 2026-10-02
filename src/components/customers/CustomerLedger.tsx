@@ -251,29 +251,29 @@ export default function CustomerLedger({ customerId }: CustomerLedgerProps) {
         /* Tab 2: Account Details & Metadata */
         <div className="bg-white border border-slate-200/70 rounded-2xl p-4 shadow-2xs space-y-3 text-xs">
           <div>
-            <h3 className="font-bold text-slate-900 text-sm">Account Profile</h3>
-            <p className="text-slate-500 text-[11px]">Primary wholesale ledger attributes</p>
+            <h3 className="font-bold text-slate-900 text-sm">Customer details</h3>
+            <p className="text-slate-500 text-[11px]">Contact details and notes</p>
           </div>
 
           <div className="space-y-2 pt-2 border-t border-slate-100">
             <div className="flex justify-between py-1 border-b border-slate-50">
-              <span className="text-slate-500">Account Name</span>
+              <span className="text-slate-500">Customer</span>
               <span className="font-semibold text-slate-800">{customer.name}</span>
             </div>
             <div className="flex justify-between py-1 border-b border-slate-50">
-              <span className="text-slate-500">Customer Phone</span>
+              <span className="text-slate-500">Phone</span>
               <span className="font-mono text-slate-800">{customer.phone}</span>
             </div>
             <div className="flex justify-between py-1 border-b border-slate-50">
-              <span className="text-slate-500">Business Address</span>
+              <span className="text-slate-500">Address</span>
               <span className="text-slate-800">{customer.address}</span>
             </div>
             <div className="flex justify-between py-1 border-b border-slate-50">
-              <span className="text-slate-500">Ledger Ground Truth</span>
-              <span className="font-medium text-emerald-700">Chronological Transaction Stream</span>
+              <span className="text-slate-500">History</span>
+              <span className="font-medium text-emerald-700">Sorted by date</span>
             </div>
             <div className="flex justify-between py-1 border-b border-slate-50">
-              <span className="text-slate-500">Customer Notes</span>
+              <span className="text-slate-500">Notes</span>
               <span className="text-slate-700 italic">{customer.notes || 'None'}</span>
             </div>
           </div>

@@ -62,7 +62,7 @@ function RecordCustomerPaymentContent() {
     // Strict validation: customer with 0 balance cannot record payment (Manager only, since warehouse has no ledger access)
     if (isManager && outstanding <= 0) {
       setErrors({
-        general: t.payment.noDebtNotice || 'This customer has no outstanding balance (0 ETB). Payments cannot be recorded.',
+        general: t.payment.noDebtNotice || 'This customer has no balance due.',
       });
       return;
     }

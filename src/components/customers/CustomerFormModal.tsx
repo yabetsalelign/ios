@@ -43,7 +43,7 @@ export default function CustomerFormModal({
     if (isSubmitting) return;
 
     if (!name.trim()) {
-      setErrors({ name: language === 'am' ? 'የደንበኛ ስም ማስገባት ግዴታ ነው።' : 'Customer name is required.' });
+      setErrors({ name: language === 'am' ? 'የደንበኛ ስም ማስገባት ግዴታ ነው።' : 'Enter a customer name.' });
       return;
     }
 
@@ -69,12 +69,12 @@ export default function CustomerFormModal({
     }
   };
 
-  const titleText = language === 'am' ? 'አዲስ ደንበኛ ጨምር' : 'Add New Customer';
-  const subtitleText = language === 'am' ? 'አዲስ የደንበኛ መረጃ ይመዝግቡ' : 'Add a new customer to StockFlow';
-  const nameLabel = language === 'am' ? 'የደንበኛ ስም' : 'Customer Name';
+  const titleText = language === 'am' ? 'አዲስ ደንበኛ ጨምር' : 'Add Customer';
+  const subtitleText = language === 'am' ? 'አዲስ የደንበኛ መረጃ ይመዝግቡ' : 'Add customer details';
+  const nameLabel = language === 'am' ? 'የደንበኛ ስም' : 'Customer name';
   const namePlaceholder = language === 'am' ? 'ለምሳሌ፦ መርካቶ ሱፐርማርኬት' : 'e.g. Merkato Supermarket';
-  const phoneLabel = language === 'am' ? 'ስልክ ቁጥር' : 'Phone Number';
-  const addressLabel = language === 'am' ? 'አድራሻ / ቦታ' : 'Address / Location';
+  const phoneLabel = language === 'am' ? 'ስልክ ቁጥር' : 'Phone';
+  const addressLabel = language === 'am' ? 'አድራሻ / ቦታ' : 'Address';
   const addressPlaceholder = language === 'am' ? 'ለምሳሌ፦ መርካቶ፣ አዲስ አበባ' : 'e.g. Merkato, Addis Ababa';
   const notesLabel = language === 'am' ? 'ማስታወሻ (አማራጭ)' : 'Notes (optional)';
   const notesPlaceholder = language === 'am' ? 'ለምሳሌ፦ ሳምንታዊ የብድር ውል' : 'e.g. Weekly credit terms';

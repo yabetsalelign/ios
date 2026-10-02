@@ -156,7 +156,7 @@ export default function ProfileModal() {
             <div className="flex items-center gap-2 mb-3">
               <Mail className="w-4 h-4 text-slate-500" />
               <h3 className="text-xs font-bold text-slate-900">
-                {language === 'am' ? 'የመጋዘን ሠራተኛ ጋብዝ' : 'Invite staff member'}
+                {language === 'am' ? 'የመጋዘን ሠራተኛ ጋብዝ' : 'Invite Staff'}
               </h3>
             </div>
             <form onSubmit={sendStaffInvitation} className="space-y-2.5">
@@ -184,7 +184,7 @@ export default function ProfileModal() {
                 {isInviting ? <span>{language === 'am' ? 'በመላክ ላይ...' : 'Sending...'}</span> : (
                   <>
                     <Send className="w-3.5 h-3.5" />
-                    <span>{language === 'am' ? 'ግብዣ ላክ' : 'Send invitation'}</span>
+                    <span>{language === 'am' ? 'ግብዣ ላክ' : 'Send Invite'}</span>
                   </>
                 )}
               </button>
@@ -192,7 +192,7 @@ export default function ProfileModal() {
             <p aria-live="polite" className={`mt-2 text-[11px] ${inviteStatus === 'success' ? 'text-emerald-700' : 'text-rose-700'}`}>
               {inviteStatus === 'success' && (language === 'am' ? 'ግብዣው ተልኳል።' : 'Invitation sent.')}
               {inviteStatus === 'error' && (language === 'am' ? 'ግብዣውን መላክ አልተቻለም። እንደገና ይሞክሩ።' : 'Could not send the invitation. Please try again.')}
-              {inviteStatus === 'cooldown' && (language === 'am' ? 'እባክዎ እንደገና ከመላክዎ በፊት 30 ሰከንድ ይጠብቁ።' : 'Please wait 30 seconds before resending to this address.')}
+              {inviteStatus === 'cooldown' && (language === 'am' ? 'እባክዎ እንደገና ከመላክዎ በፊት 30 ሰከንድ ይጠብቁ።' : 'Wait 30 seconds before sending again.')}
             </p>
           </section>
         )}
@@ -237,7 +237,7 @@ export default function ProfileModal() {
                   : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
               }`}
             >
-              English (EN)
+              English
             </button>
             <button
               type="button"
@@ -248,7 +248,7 @@ export default function ProfileModal() {
                   : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
               }`}
             >
-              አማርኛ (Amharic)
+              Amharic
             </button>
           </div>
         </div>
@@ -257,7 +257,7 @@ export default function ProfileModal() {
         <div className="mt-4 p-3.5 rounded-2xl border border-slate-200/80 bg-white space-y-2.5 text-xs">
           <div className="flex items-center gap-2 pb-1 border-b border-slate-100">
             <Sliders className="w-4 h-4 text-slate-500" />
-            <span className="font-bold text-slate-900">System Preferences</span>
+            <span className="font-bold text-slate-900">Business Settings</span>
           </div>
 
           <div className="flex items-center justify-between py-1 text-slate-600">
@@ -266,7 +266,7 @@ export default function ProfileModal() {
           </div>
 
           <div className="flex items-center justify-between py-1 text-slate-600">
-            <span>Inventory Tracking Unit</span>
+            <span>Stock Unit</span>
             <span className="font-bold uppercase text-slate-900">Cartons (ctn)</span>
           </div>
 

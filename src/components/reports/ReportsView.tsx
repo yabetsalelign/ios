@@ -150,7 +150,7 @@ export default function ReportsView() {
       <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-slate-900 tracking-tight">{t.reports.title}</h1>
-          <p className="text-xs text-slate-500 mt-0.5">Sales, credit &amp; stock overview</p>
+          <p className="text-xs text-slate-500 mt-0.5">Money owed, best-selling products, and low stock</p>
         </div>
         <button
           type="button"
@@ -171,7 +171,7 @@ export default function ReportsView() {
             <div>
               <h2 className="text-xs font-semibold text-slate-500">Total sales</h2>
               <p className="mt-0.5 text-lg font-bold text-slate-900 font-mono tabular-nums">
-                {salesDataUnavailable ? 'Unavailable' : !salesDataReady ? 'Loading...' : sevenDaySales.toLocaleString()}
+                {salesDataUnavailable ? 'Not available' : !salesDataReady ? 'Loading...' : sevenDaySales.toLocaleString()}
                 {!salesDataUnavailable && salesDataReady && <span className="ml-1 text-xs font-sans font-medium text-slate-400">ETB</span>}
               </p>
               <p className="text-[10px] text-slate-400">Last 7 days</p>
@@ -180,7 +180,7 @@ export default function ReportsView() {
           <div className="grid grid-cols-7 gap-2 sm:w-3/5 sm:gap-3" aria-label="Daily sales totals">
             {!salesDataReady || salesDataUnavailable ? (
               <p className="col-span-7 py-2 text-center text-[11px] text-slate-400">
-                {salesDataUnavailable ? 'Sales data is unavailable.' : 'Loading daily sales...'}
+                {salesDataUnavailable ? 'Sales data isn\'t available.' : 'Loading sales...'}
               </p>
             ) : activityDays.map((day) => (
               <div key={day.key} className="min-w-0 text-center" title={`${day.date.toLocaleDateString()}: ${day.total.toLocaleString()} ETB`}>
@@ -210,7 +210,7 @@ export default function ReportsView() {
             </div>
             <div>
               <h2 className="text-sm font-bold text-slate-900">Best-selling products</h2>
-              <p className="text-[10px] text-slate-400">By cartons sold, last 7 days</p>
+              <p className="text-[10px] text-slate-400">Cartons sold in the last 7 days</p>
             </div>
           </div>
         </div>
@@ -223,7 +223,7 @@ export default function ReportsView() {
           </div>
           {!salesDataReady || productBestSellers.length === 0 ? (
             <p className="px-4 py-7 text-center text-xs text-slate-500">
-              {salesDataUnavailable ? 'Product sales are unavailable.' : !salesDataReady ? 'Loading product sales...' : 'No products sold in the last 7 days.'}
+              {salesDataUnavailable ? 'Product sales aren\'t available.' : !salesDataReady ? 'Loading sales...' : 'No products sold in the last 7 days.'}
             </p>
           ) : (
             <div className="divide-y divide-slate-100">
@@ -262,7 +262,7 @@ export default function ReportsView() {
             <div className="divide-y divide-slate-100">
               <div className="grid grid-cols-12 gap-2 px-4 py-2.5 bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                 <span className="col-span-5">Customer</span>
-                <span className="col-span-3 text-right">Total Sales</span>
+                <span className="col-span-3 text-right">Total sales</span>
                 <span className="col-span-4 text-right">Owes</span>
               </div>
               {customersWithDebt.map((customer, index) => (
@@ -296,7 +296,7 @@ export default function ReportsView() {
             <div className="w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center">
               <AlertTriangle className="w-4 h-4 text-amber-600" />
             </div>
-            <h2 className="text-sm font-bold text-slate-900">Low-stock / reorder</h2>
+            <h2 className="text-sm font-bold text-slate-900">Low-stock and reorder</h2>
           </div>
         </div>
 
@@ -318,7 +318,7 @@ export default function ReportsView() {
                       </div>
                       <div className="min-w-0">
                         <p className="font-semibold text-slate-900 truncate">{product.name}</p>
-                        <p className="text-[10px] text-slate-400 font-mono">Min: {product.lowStockThresholdCartons} ctn · Has: {product.currentStockCartons} ctn</p>
+                        <p className="text-[10px] text-slate-400 font-mono">Min: {product.lowStockThresholdCartons} cartons · In stock: {product.currentStockCartons} cartons</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">

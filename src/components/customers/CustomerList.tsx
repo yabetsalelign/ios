@@ -74,7 +74,7 @@ export default function CustomerList() {
         <button
           type="button"
           onClick={() => setFilterDebtOnly((prev) => !prev)}
-          title="Filter only customers with outstanding balance"
+          title="Show customers with a balance due"
           className={`h-10 px-3 border rounded-2xl flex items-center gap-1.5 text-xs font-medium transition-all shadow-2xs flex-shrink-0 ${
             filterDebtOnly
               ? 'bg-rose-50 border-rose-200 text-rose-700 font-semibold'

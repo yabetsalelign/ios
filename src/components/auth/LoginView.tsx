@@ -68,7 +68,7 @@ export default function LoginView() {
     e.preventDefault();
     setError('');
     if (!email.trim() || !password.trim()) {
-      setError(language === 'am' ? 'እባክዎን ኢሜይል እና የይለፍ ቃል ያስገቡ።' : 'Please enter your email and password.');
+      setError(language === 'am' ? 'እባክዎን ኢሜይል እና የይለፍ ቃል ያስገቡ።' : 'Enter your email and password.');
       return;
     }
     setIsSubmitting(true);
@@ -78,7 +78,7 @@ export default function LoginView() {
         result?.error ||
         (language === 'am'
           ? 'ኢሜይሉ ወይም የይለፍ ቃሉ ትክክለኛ አይደለም።'
-          : 'Incorrect email or password. Please try again.')
+          : 'Email or password is incorrect. Try again.')
       );
       setIsSubmitting(false);
     }
@@ -88,7 +88,7 @@ export default function LoginView() {
     e.preventDefault();
     setError('');
     if (!recoveryEmail.trim()) {
-      setError(language === 'am' ? 'እባክዎን ኢሜይልዎን ያስገቡ' : 'Please enter your email address.');
+      setError(language === 'am' ? 'እባክዎን ኢሜይልዎን ያስገቡ' : 'Enter your email.');
       return;
     }
     setIsSubmitting(true);
@@ -104,15 +104,15 @@ export default function LoginView() {
     const cleanNew = newPassword.trim();
     const cleanConfirm = confirmPassword.trim();
     if (!cleanNew || !cleanConfirm) {
-      setError(language === 'am' ? 'እባክዎን ሁለቱንም የይለፍ ቃል መስኮች ይሙሉ' : 'Please fill in both password fields.');
+      setError(language === 'am' ? 'እባክዎን ሁለቱንም የይለፍ ቃል መስኮች ይሙሉ' : 'Enter both passwords.');
       return;
     }
     if (cleanNew.length < 6) {
-      setError(language === 'am' ? 'የይለፍ ቃሉ ቢያንስ 6 ፊደላት/ቁጥሮች መሆን አለበት' : 'Password must be at least 6 characters long.');
+      setError(language === 'am' ? 'የይለፍ ቃሉ ቢያንስ 6 ፊደላት/ቁጥሮች መሆን አለበት' : 'Use at least 6 characters.');
       return;
     }
     if (cleanNew !== cleanConfirm) {
-      setError(language === 'am' ? 'የይለፍ ቃሎቹ አይዛመዱም' : 'Passwords do not match. Please verify and try again.');
+      setError(language === 'am' ? 'የይለፍ ቃሎቹ አይዛመዱም' : 'Passwords don\'t match.');
       return;
     }
     setIsSubmitting(true);
@@ -122,7 +122,7 @@ export default function LoginView() {
         result.error ||
         (language === 'am'
           ? 'የይለፍ ቃል ማዘጋጀት አልተሳካም። እባክዎ እንደገና ይሞክሩ።'
-          : 'Failed to create password. Please try again.')
+          : 'Couldn\'t save your password. Try again.')
       );
       setIsSubmitting(false);
     }
@@ -144,7 +144,7 @@ export default function LoginView() {
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      setError(language === 'am' ? 'ምስሉ ከ5 MB መብለጥ የለበትም።' : 'The image must be 5 MB or smaller.');
+      setError(language === 'am' ? 'ምስሉ ከ5 MB መብለጥ የለበትም።' : 'Choose an image under 5 MB.');
       return;
     }
 
@@ -182,7 +182,7 @@ export default function LoginView() {
           </div>
           <div>
             <span className="font-bold text-base tracking-tight text-white">StockFlow</span>
-            <span className="text-[10px] text-slate-400 ml-2 font-mono uppercase tracking-wider hidden sm:inline">Inventory OS</span>
+            <span className="text-[10px] text-slate-400 ml-2 font-mono uppercase tracking-wider hidden sm:inline">Inventory &amp; sales</span>
           </div>
         </div>
 
@@ -208,7 +208,7 @@ export default function LoginView() {
                   {language === 'am' ? 'እንኳን ደህና መጡ' : 'Welcome back'}
                 </h1>
                 <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
-                  {language === 'am' ? 'ወደ StockFlow ለመግባት ይግቡ' : 'Sign in to your StockFlow account'}
+                  {language === 'am' ? 'ወደ StockFlow ለመግባት ይግቡ' : 'Sign in to StockFlow'}
                 </p>
               </>
             )}
@@ -233,8 +233,8 @@ export default function LoginView() {
                 </h1>
                 <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
                   {invitedEmail
-                    ? `${language === 'am' ? 'ለመለያዎ የይለፍ ቃል ይፍጠሩ' : 'Create your password to activate your account'}: ${invitedEmail}`
-                    : (language === 'am' ? 'መለያዎን ለማንቃት የይለፍ ቃል ይፍጠሩ' : 'Create your password to activate your account')}
+                    ? `${language === 'am' ? 'ለመለያዎ የይለፍ ቃል ይፍጠሩ' : 'Choose a password for your account'}: ${invitedEmail}`
+                    : (language === 'am' ? 'መለያዎን ለማንቃት የይለፍ ቃል ይፍጠሩ' : 'Choose a password for your account')}
                 </p>
               </>
             )}
@@ -252,7 +252,7 @@ export default function LoginView() {
             <form onSubmit={handleLoginSubmit} className="space-y-4">
               <div>
                 <label htmlFor="auth-email" className="block text-xs font-semibold text-slate-700 mb-1">
-                  {language === 'am' ? 'ኢሜይል' : 'Email address'}
+                  {language === 'am' ? 'ኢሜይል' : 'Email'}
                 </label>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -308,7 +308,7 @@ export default function LoginView() {
                     {language === 'am' ? 'እየገቡ ነው...' : 'Signing in...'}
                   </span>
                 ) : (
-                  <><span>{language === 'am' ? 'ግባ' : 'Sign In'}</span><ArrowRight className="w-4 h-4" /></>
+                  <><span>{language === 'am' ? 'ግባ' : 'Sign in'}</span><ArrowRight className="w-4 h-4" /></>
                 )}
               </button>
 
@@ -391,7 +391,7 @@ export default function LoginView() {
                     : 'If an account exists for this email, check your inbox for a password reset link.'}
                 </p>
                 <p className="text-[10px] text-slate-400">
-                  {language === 'am' ? 'ኢሜይሉ ካልደረሰ ስፓምን ያረጋግጡ' : 'Didn\'t receive it? Check your spam folder.'}
+                  {language === 'am' ? 'ኢሜይሉ ካልደረሰ ስፓምን ያረጋግጡ' : 'No email? Check your spam folder.'}
                 </p>
               </div>
 
@@ -531,7 +531,7 @@ export default function LoginView() {
                 {isSubmitting ? (
                   <span className="flex items-center gap-2">
                     <Spinner />
-                    {language === 'am' ? 'እየተዘጋጀ ነው...' : 'Setting up password...'}
+                    {language === 'am' ? 'እየተዘጋጀ ነው...' : 'Saving password...'}
                   </span>
                 ) : (
                   <><span>{language === 'am' ? 'ቀጥል' : 'Continue'}</span><ArrowRight className="w-4 h-4" /></>
@@ -545,7 +545,7 @@ export default function LoginView() {
 
       {/* Footer */}
       <div className="w-full max-w-md mx-auto text-center pb-2">
-        <p className="text-[11px] text-slate-500">StockFlow — Addis Ababa Inventory &amp; Sales Management System</p>
+        <p className="text-[11px] text-slate-500">StockFlow — Stock and sales</p>
       </div>
     </div>
   );

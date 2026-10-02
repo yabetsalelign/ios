@@ -106,7 +106,7 @@ export default function InventoryList() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
           <div className="w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 text-center">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-sm text-slate-900">Scan Barcode / QR</h3>
+              <h3 className="font-bold text-sm text-slate-900">Scan barcode</h3>
               <button
                 type="button"
                 onClick={() => setIsScannerOpen(false)}
@@ -119,17 +119,17 @@ export default function InventoryList() {
             <div className="w-48 h-48 mx-auto my-3 border-2 border-dashed border-blue-500 rounded-2xl flex flex-col items-center justify-center bg-blue-50/40 relative overflow-hidden">
               <ScanBarcode className="w-12 h-12 text-blue-500 animate-pulse" />
               <div className="w-full h-0.5 bg-blue-500 absolute top-1/2 animate-bounce" />
-              <p className="text-[11px] text-blue-700 mt-2 font-medium">Position code in frame</p>
+              <p className="text-[11px] text-blue-700 mt-2 font-medium">Hold the barcode in the frame.</p>
             </div>
             <p className="text-xs text-slate-500 mt-3">
-              Camera scanner ready. Scan any warehouse carton code to jump directly to product details.
+              Scan a product barcode to find it.
             </p>
             <button
               type="button"
               onClick={() => setIsScannerOpen(false)}
               className="mt-4 w-full py-2 bg-slate-900 text-white rounded-xl text-xs font-semibold hover:bg-slate-800"
             >
-              Done Scanning
+              Done
             </button>
           </div>
         </div>
@@ -333,7 +333,7 @@ export default function InventoryList() {
               <div>
                 <p className="text-lg font-bold text-slate-900 font-mono">{selectedProduct.piecesPerCarton || 24}</p>
                 <p className="text-[10px] text-slate-500 uppercase tracking-wider font-medium">{t.inventory.piecesPerCarton}</p>
-                <p className="text-[9px] text-slate-400">metadata</p>
+                <p className="text-[9px] text-slate-400">Info</p>
               </div>
             </div>
 

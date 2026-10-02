@@ -434,7 +434,7 @@ function RecordSaleContent() {
                           onChange={(e) => handleProductChange(idx, e.target.value)}
                           className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-2 text-xs text-slate-900 font-medium"
                         >
-                          <option value="">-- Select a product --</option>
+                          <option value="">-- Choose a product --</option>
                           {filteredProducts.map((p) => (
                             <option key={p.id} value={p.id}>
                               {p.name} — {p.currentStockCartons} {t.inventory.cartons} {t.inventory.inStock} (SKU: {p.sku})
