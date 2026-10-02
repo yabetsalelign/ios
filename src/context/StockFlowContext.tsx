@@ -33,6 +33,7 @@ import {
 } from '../domain/validation/validators';
 import { generateTransactionReference } from '../domain/transactions/referenceGenerator';
 import { supabase, isSupabaseConfigured } from '../lib/supabase/client';
+import { getProfileAvatarUrl, removeProfileAvatar, uploadProfileAvatar } from '../lib/supabase/storage';
 import { ProfileRow } from '../lib/supabase/types';
 
 // Blank user — auth state is unauthenticated until Supabase session is established
@@ -61,7 +62,7 @@ interface StockFlowContextValue {
   isHydrated: boolean;
   isFirstTimeSetup: boolean;
   invitedEmail: string | null;
-  completeFirstTimeSetup: (password: string) => Promise<{ success: boolean; error?: string }>;
+  completeFirstTimeSetup: (password: string, avatarFile?: File) => Promise<{ success: boolean; error?: string }>;
   requestAccountSetup: (email: string) => Promise<{ success: boolean; error?: string }>;
   login: (email: string, password?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void> | void;
@@ -283,14 +284,15 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let isMounted = true;
 
-    const applyProfile = (profile: ProfileRow, email: string) => {
+    const applyProfile = async (profile: ProfileRow, email: string) => {
+      const avatarUrl = await getProfileAvatarUrl(profile.avatar_url);
       if (!isMounted) return;
       setCurrentUser({
         id: profile.id,
         name: profile.full_name,
         email,
         role: profile.role,
-        avatarUrl: profile.avatar_url || (profile.role === 'manager'
+        avatarUrl: avatarUrl || (profile.role === 'manager'
           ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=128&auto=format&fit=crop&q=80'
           : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=128&auto=format&fit=crop&q=80'),
       });
@@ -328,7 +330,7 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
               .single()) as { data: ProfileRow | null; error: any };
 
             if (profile) {
-              applyProfile(profile, session.user.email || '');
+              await applyProfile(profile, session.user.email || '');
               await loadSupabaseData();
             } else if (profileError) {
               console.error('Error loading profile during session restore:', profileError);
@@ -362,7 +364,7 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
               .single()) as { data: ProfileRow | null; error: any };
 
             if (profile) {
-              applyProfile(profile, session.user.email || '');
+              await applyProfile(profile, session.user.email || '');
               await loadSupabaseData();
             }
           } catch (err) {
@@ -388,7 +390,7 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
     };
   }, [isFirstTimeSetup, loadSupabaseData]);
 
-  const completeFirstTimeSetup = async (password: string): Promise<{ success: boolean; error?: string }> => {
+  const completeFirstTimeSetup = async (password: string, avatarFile?: File): Promise<{ success: boolean; error?: string }> => {
     const cleanPassword = password.trim();
     if (!cleanPassword || cleanPassword.length < 6) {
       return { success: false, error: 'Password must be at least 6 characters.' };
@@ -407,6 +409,28 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
         return { success: false, error: 'Failed to set password.' };
       }
 
+      if (avatarFile) {
+        let uploadedPath: string | undefined;
+        try {
+          const uploadResult = await uploadProfileAvatar(avatarFile);
+          uploadedPath = uploadResult.path;
+          if (!uploadedPath) {
+            return { success: false, error: 'Password was created, but the profile picture could not be uploaded. Retry or skip for now.' };
+          }
+
+          const { error: avatarUpdateError } = await supabase.rpc('set_my_avatar_url', {
+            p_avatar_url: uploadedPath,
+          } as never);
+          if (avatarUpdateError) {
+            await removeProfileAvatar(uploadedPath);
+            return { success: false, error: 'Password was created, but the profile picture could not be saved. Retry or skip for now.' };
+          }
+        } catch {
+          if (uploadedPath) await removeProfileAvatar(uploadedPath);
+          return { success: false, error: 'Password was created, but the profile picture could not be saved. Retry or skip for now.' };
+        }
+      }
+
       // Clear tokens from URL bar cleanly
       if (typeof window !== 'undefined' && window.history?.replaceState) {
         window.history.replaceState({}, document.title, window.location.pathname);
@@ -420,12 +444,13 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
         .single()) as { data: ProfileRow | null; error: any };
 
       if (profile) {
+        const avatarUrl = await getProfileAvatarUrl(profile.avatar_url);
         setCurrentUser({
           id: profile.id,
           name: profile.full_name,
           email: data.user.email || '',
           role: profile.role,
-          avatarUrl: profile.avatar_url || (profile.role === 'manager'
+          avatarUrl: avatarUrl || (profile.role === 'manager'
             ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=128&auto=format&fit=crop&q=80'
             : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=128&auto=format&fit=crop&q=80'),
         });
@@ -514,12 +539,13 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
         return { success: false, error: 'User profile not found in database.' };
       }
 
+      const avatarUrl = await getProfileAvatarUrl(profile.avatar_url);
       setCurrentUser({
         id: profile.id,
         name: profile.full_name,
         email: data.user.email || cleanEmail,
         role: profile.role,
-        avatarUrl: profile.avatar_url || (profile.role === 'manager'
+        avatarUrl: avatarUrl || (profile.role === 'manager'
           ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=128&auto=format&fit=crop&q=80'
           : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=128&auto=format&fit=crop&q=80'),
       });

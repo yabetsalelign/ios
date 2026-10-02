@@ -320,6 +320,12 @@ export interface Database {
         };
         Returns: Json;
       };
+      set_my_avatar_url: {
+        Args: {
+          p_avatar_url: string | null;
+        };
+        Returns: undefined;
+      };
     };
   };
 }

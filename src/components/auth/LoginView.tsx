@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Lock, Mail, ArrowRight, Eye, EyeOff, CheckCircle2, ArrowLeft } from 'lucide-react';
+import { Lock, Mail, ArrowRight, Eye, EyeOff, CheckCircle2, ArrowLeft, ImagePlus, UserRound, X } from 'lucide-react';
 import { useStockFlow } from '../../context/StockFlowContext';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -39,9 +39,16 @@ export default function LoginView() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [selectedAvatar, setSelectedAvatar] = useState<{ file: File; previewUrl: string } | null>(null);
 
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (selectedAvatar) URL.revokeObjectURL(selectedAvatar.previewUrl);
+    };
+  }, [selectedAvatar]);
 
   // Parse URL hash error messages (e.g. expired invite link)
   useEffect(() => {
@@ -92,8 +99,7 @@ export default function LoginView() {
     setIsSubmitting(false);
   };
 
-  const handleSetupSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const finishSetup = async (avatarFile: File | null) => {
     setError('');
     const cleanNew = newPassword.trim();
     const cleanConfirm = confirmPassword.trim();
@@ -110,7 +116,7 @@ export default function LoginView() {
       return;
     }
     setIsSubmitting(true);
-    const result = await completeFirstTimeSetup(cleanNew);
+    const result = await completeFirstTimeSetup(cleanNew, avatarFile || undefined);
     if (!result.success) {
       setError(
         result.error ||
@@ -120,6 +126,30 @@ export default function LoginView() {
       );
       setIsSubmitting(false);
     }
+  };
+
+  const handleSetupSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await finishSetup(selectedAvatar?.file ?? null);
+  };
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.currentTarget.files?.[0];
+    e.currentTarget.value = '';
+    if (!file) return;
+
+    const acceptedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!acceptedTypes.includes(file.type)) {
+      setError(language === 'am' ? 'JPG፣ PNG፣ WEBP ወይም GIF ምስል ይምረጡ።' : 'Choose a JPG, PNG, WEBP, or GIF image.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError(language === 'am' ? 'ምስሉ ከ5 MB መብለጥ የለበትም።' : 'The image must be 5 MB or smaller.');
+      return;
+    }
+
+    setError('');
+    setSelectedAvatar({ file, previewUrl: URL.createObjectURL(file) });
   };
 
   // ── Shared UI helpers ─────────────────────────────────────────────────────
@@ -199,7 +229,7 @@ export default function LoginView() {
             {mode === 'create-password' && (
               <>
                 <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
-                  {language === 'am' ? 'እንኳን ወደ StockFlow በደህና መጡ' : 'Welcome to StockFlow'}
+                  {language === 'am' ? 'የይለፍ ቃልዎን ይፍጠሩ' : 'Create your password'}
                 </h1>
                 <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
                   {invitedEmail
@@ -382,7 +412,7 @@ export default function LoginView() {
             <form onSubmit={handleSetupSubmit} className="space-y-4">
               <div>
                 <label htmlFor="setup-new-password" className="block text-xs font-semibold text-slate-700 mb-1">
-                  {language === 'am' ? 'የይለፍ ቃል ይፍጠሩ' : 'Create your password'}
+                  {language === 'am' ? 'የይለፍ ቃል' : 'Password'}
                 </label>
                 <div className="relative">
                   <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -410,7 +440,7 @@ export default function LoginView() {
 
               <div>
                 <label htmlFor="setup-confirm-password" className="block text-xs font-semibold text-slate-700 mb-1">
-                  {language === 'am' ? 'የይለፍ ቃልዎን ያረጋግጡ' : 'Confirm your password'}
+                  {language === 'am' ? 'የይለፍ ቃል ያረጋግጡ' : 'Confirm password'}
                 </label>
                 <div className="relative">
                   <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -435,6 +465,62 @@ export default function LoginView() {
                   </button>
                 </div>
               </div>
+
+              <div>
+                <p className="block text-xs font-semibold text-slate-700 mb-2">
+                  {language === 'am' ? 'የመገለጫ ምስል' : 'Profile picture'}
+                </p>
+                <div className="flex items-center gap-3">
+                  <div className="w-14 h-14 rounded-full overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center flex-shrink-0">
+                    {selectedAvatar ? (
+                      <img src={selectedAvatar.previewUrl} alt="Profile preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <UserRound className="w-6 h-6 text-slate-400" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <label
+                      htmlFor="setup-avatar"
+                      className="inline-flex items-center gap-1.5 px-3 py-2 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer"
+                    >
+                      <ImagePlus className="w-4 h-4" />
+                      {selectedAvatar
+                        ? (language === 'am' ? 'ምስል ቀይር' : 'Change photo')
+                        : (language === 'am' ? 'ምስል ጨምር' : 'Add photo')}
+                    </label>
+                    <input
+                      id="setup-avatar"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarChange}
+                      className="sr-only"
+                    />
+                    {selectedAvatar && (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedAvatar(null)}
+                        className="ml-2 inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-800"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                        {language === 'am' ? 'አስወግድ' : 'Remove'}
+                      </button>
+                    )}
+                    <p className="text-[10px] text-slate-400 mt-1">
+                      {language === 'am' ? 'አማራጭ · እስከ 5 MB' : 'Optional · JPG, PNG, WEBP, or GIF · Up to 5 MB'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                id="skip-profile-picture-btn"
+                disabled={isSubmitting}
+                onClick={() => void finishSetup(null)}
+                className="w-full py-1 text-xs font-semibold text-slate-500 hover:text-slate-800 disabled:text-slate-400"
+              >
+                {language === 'am' ? 'ለአሁን ዝለል' : 'Skip for now'}
+              </button>
 
               <button
                 type="submit"
