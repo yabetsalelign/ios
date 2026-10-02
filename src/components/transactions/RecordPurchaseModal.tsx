@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X, PlusCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { useStockFlow } from '../../context/StockFlowContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { validationMessage } from '../../i18n/format';
+import { calculateStockAfterPurchase } from '../../domain/calculations/inventory';
 
 function RecordPurchaseContent() {
   const {
@@ -13,37 +14,25 @@ function RecordPurchaseContent() {
     preselectedProductId,
     setPreselectedProductId,
     executePurchase,
+    currentUser,
   } = useStockFlow();
   const { t } = useLanguage();
 
-  const initialTargetId = preselectedProductId || products[0]?.id || '';
+  const initialTargetId = preselectedProductId || '';
   const initialProd = products.find((p) => p.id === initialTargetId);
 
   const [productId, setProductId] = useState<string>(initialTargetId);
-  const [quantityCartons, setQuantityCartons] = useState<number>(10);
+  const [quantityCartons, setQuantityCartons] = useState<number>(0);
   const [costPerCarton, setCostPerCarton] = useState<number>(initialProd ? initialProd.costPerCarton : 0);
   const [supplierName, setSupplierName] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Ensure cost is automatically pre-filled from catalog when product is selected or loads
-  useEffect(() => {
-    if (productId) {
-      const prod = products.find((p) => p.id === productId);
-      if (prod && (costPerCarton === 0 || !costPerCarton) && prod.costPerCarton > 0) {
-        setCostPerCarton(prod.costPerCarton);
-      }
-    } else if (products.length > 0) {
-      const target = preselectedProductId ? products.find((p) => p.id === preselectedProductId) : products[0];
-      if (target) {
-        setProductId(target.id);
-        setCostPerCarton(target.costPerCarton);
-      }
-    }
-  }, [products, productId, preselectedProductId, costPerCarton]);
-
   const selectedProduct = products.find((p) => p.id === productId);
   const totalCost = (quantityCartons || 0) * (costPerCarton || 0);
+  const projectedStock = selectedProduct
+    ? calculateStockAfterPurchase(selectedProduct.currentStockCartons, quantityCartons)
+    : null;
 
   const handleClose = () => {
     setActiveModal(null);
@@ -53,9 +42,7 @@ function RecordPurchaseContent() {
   const handleProductChange = (newProductId: string) => {
     setProductId(newProductId);
     const prod = products.find((p) => p.id === newProductId);
-    if (prod) {
-      setCostPerCarton(prod.costPerCarton);
-    }
+    setCostPerCarton(prod?.costPerCarton ?? 0);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -129,18 +116,40 @@ function RecordPurchaseContent() {
             <label htmlFor="purchase-product" className="block text-xs font-semibold text-slate-700 mb-1">
               {t.purchase.chooseProduct} <span className="text-rose-500">*</span>
             </label>
-            <select
-              id="purchase-product"
-              value={productId}
-              onChange={(e) => handleProductChange(e.target.value)}
-              className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-900 focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 font-medium"
-            >
-              {products.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name} — {t.purchase.currentStock}: {p.currentStockCartons} {t.inventory.cartons} (SKU: {p.sku})
-                </option>
-              ))}
-            </select>
+            {products.length > 0 ? (
+              <select
+                id="purchase-product"
+                value={productId}
+                onChange={(e) => handleProductChange(e.target.value)}
+                className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-900 focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 font-medium"
+              >
+                <option value="">-- {t.purchase.chooseProduct} --</option>
+                {products.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div className="p-3 bg-blue-50/50 border border-blue-100 rounded-xl text-xs">
+                <p className="font-semibold text-slate-800">{t.common.noProductsYet}</p>
+                <p className="text-slate-600 mt-1">
+                  {currentUser.role === 'manager' ? t.common.addFirstProductHint : t.common.askManagerToAddProduct}
+                </p>
+                {currentUser.role === 'manager' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPreselectedProductId(null);
+                      setActiveModal('add_product');
+                    }}
+                    className="mt-2 text-xs font-semibold text-blue-700"
+                  >
+                    {t.inventory.addProduct}
+                  </button>
+                )}
+              </div>
+            )}
             {errors.productId && (
               <p className="text-[11px] text-rose-600 mt-1 flex items-center gap-1 font-medium">
                 <AlertCircle className="w-3 h-3" />
@@ -148,12 +157,22 @@ function RecordPurchaseContent() {
               </p>
             )}
             {selectedProduct && (
-              <p className="text-[11px] text-slate-500 mt-1">
-                {t.purchase.currentStock}:{' '}
-                <span className="font-semibold text-slate-900 font-mono">
-                  {selectedProduct.currentStockCartons} {t.inventory.cartons}
-                </span>
-              </p>
+              <div className="mt-1 space-y-0.5 text-[11px] text-slate-500">
+                <p>
+                  {t.purchase.currentStock}:{' '}
+                  <span className="font-semibold text-slate-900 font-mono">
+                    {selectedProduct.currentStockCartons} {t.inventory.cartons}
+                  </span>
+                </p>
+                {quantityCartons > 0 && projectedStock !== null && (
+                  <p>
+                    {t.common.stockAfter}:{' '}
+                    <span className="font-semibold text-slate-900 font-mono">
+                      {projectedStock} {t.inventory.cartons}
+                    </span>
+                  </p>
+                )}
+              </div>
             )}
           </div>
 
@@ -241,6 +260,11 @@ function RecordPurchaseContent() {
                 <span>{t.purchase.submit}</span>
               )}
             </button>
+            {products.length > 0 && (!productId || quantityCartons <= 0) && (
+              <p className="mt-2 text-center text-[11px] text-slate-500">
+                {t.common.selectProductAndQuantity}
+              </p>
+            )}
           </div>
         </form>
       </div>

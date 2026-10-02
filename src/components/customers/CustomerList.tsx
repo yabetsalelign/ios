@@ -7,8 +7,9 @@ import { useLanguage } from '../../context/LanguageContext';
 import CustomerFormModal from './CustomerFormModal';
 
 export default function CustomerList() {
-  const { customers, getCustomerSummary, setSelectedCustomerId } = useStockFlow();
+  const { customers, currentUser, getCustomerSummary, setSelectedCustomerId } = useStockFlow();
   const { t } = useLanguage();
+  const isManager = currentUser.role === 'manager';
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterDebtOnly, setFilterDebtOnly] = useState(false);
@@ -39,14 +40,16 @@ export default function CustomerList() {
           <h1 className="text-xl font-bold text-slate-900 tracking-tight">{t.customers.title}</h1>
           <p className="text-xs text-slate-500">{t.customers.subtitle}</p>
         </div>
-        <button
-          type="button"
-          onClick={() => setIsAddOpen(true)}
-          className="h-9 px-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl flex items-center gap-1.5 text-xs font-semibold shadow-2xs transition-all active:scale-[0.98]"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          <span>{t.sale.addCustomer}</span>
-        </button>
+        {isManager && (
+          <button
+            type="button"
+            onClick={() => setIsAddOpen(true)}
+            className="h-9 px-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl flex items-center gap-1.5 text-xs font-semibold shadow-2xs transition-all active:scale-[0.98]"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>{t.sale.addCustomer}</span>
+          </button>
+        )}
       </div>
 
       {/* Search Bar with filter toggle */}
@@ -91,8 +94,14 @@ export default function CustomerList() {
         {filteredCustomers.length === 0 ? (
           <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center">
             <Users className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-            <p className="text-sm font-semibold text-slate-700">{t.customers.noCustomersFound}</p>
-            <p className="text-xs text-slate-400 mt-1">{t.customers.noCustomersFoundSub}</p>
+            <p className="text-sm font-semibold text-slate-700">
+              {customers.length === 0 ? t.common.noCustomersYet : t.customers.noCustomersFound}
+            </p>
+            <p className="text-xs text-slate-400 mt-1">
+              {customers.length === 0
+                ? isManager ? t.common.addFirstCustomerHint : t.common.askManagerToAddCustomer
+                : t.customers.noCustomersFoundSub}
+            </p>
           </div>
         ) : (
           filteredCustomers.map((customer) => {

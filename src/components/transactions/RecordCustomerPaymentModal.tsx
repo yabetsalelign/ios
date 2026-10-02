@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { X, CreditCard, AlertCircle, Loader2 } from 'lucide-react';
+import { X, CreditCard, AlertCircle, Loader2, UserPlus } from 'lucide-react';
 import { useStockFlow } from '../../context/StockFlowContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { validationMessage } from '../../i18n/format';
+import CustomerFormModal from '../customers/CustomerFormModal';
 
 function RecordCustomerPaymentContent() {
   const {
@@ -19,7 +20,8 @@ function RecordCustomerPaymentContent() {
   const { t } = useLanguage();
   const isManager = currentUser.role === 'manager';
 
-  const [customerId, setCustomerId] = useState<string>(() => preselectedCustomerId || customers[0]?.id || '');
+  const [customerId, setCustomerId] = useState<string>(() => preselectedCustomerId || '');
+  const [isAddCustomerOpen, setIsAddCustomerOpen] = useState(false);
   const [amount, setAmount] = useState<number>(0);
   const [paymentMethod, setPaymentMethod] = useState<string>('Cash');
   const [reference, setReference] = useState<string>('');
@@ -59,6 +61,11 @@ function RecordCustomerPaymentContent() {
     e.preventDefault();
     if (isSubmitting) return;
 
+    if (!customerId) {
+      setErrors({ customerId: 'chooseCustomer' });
+      return;
+    }
+
     // Strict validation: customer with 0 balance cannot record payment (Manager only, since warehouse has no ledger access)
     if (isManager && outstanding <= 0) {
       setErrors({
@@ -97,6 +104,7 @@ function RecordCustomerPaymentContent() {
   };
 
   return (
+    <>
     <div
       role="dialog"
       aria-modal="true"
@@ -141,15 +149,28 @@ function RecordCustomerPaymentContent() {
 
           {/* Customer Selection */}
           <div>
-            <label htmlFor="payment-customer" className="block text-xs font-semibold text-slate-700 mb-1">
-              {t.payment.chooseCustomer} <span className="text-rose-500">*</span>
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label htmlFor="payment-customer" className="block text-xs font-semibold text-slate-700">
+                {t.payment.chooseCustomer} <span className="text-rose-500">*</span>
+              </label>
+              {isManager && customers.length === 0 && (
+                <button
+                  type="button"
+                  onClick={() => setIsAddCustomerOpen(true)}
+                  className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  {t.sale.addCustomer}
+                </button>
+              )}
+            </div>
             <select
               id="payment-customer"
               value={customerId}
               onChange={(e) => handleCustomerChange(e.target.value)}
               className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-900 focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 font-medium"
             >
+              <option value="">-- {t.payment.chooseCustomer} --</option>
               {customers.map((c) => {
                 const sum = getCustomerSummary(c.id);
                 return (
@@ -159,11 +180,19 @@ function RecordCustomerPaymentContent() {
                 );
               })}
             </select>
+            {customers.length === 0 && (
+              <p className="text-[11px] text-slate-500 mt-1">
+                {isManager ? t.common.addFirstCustomerHint : t.common.askManagerToAddCustomer}
+              </p>
+            )}
             {errors.customerId && (
               <p className="text-[11px] text-rose-600 mt-1 flex items-center gap-1 font-medium">
                 <AlertCircle className="w-3 h-3" />
                 {validationMessage(errors.customerId, t)}
               </p>
+            )}
+            {!customerId && customers.length > 0 && (
+              <p className="text-[11px] text-slate-500 mt-1">{t.validation.chooseCustomer}</p>
             )}
           </div>
 
@@ -182,7 +211,7 @@ function RecordCustomerPaymentContent() {
           )}
 
           {/* Notice when customer has 0 balance (Manager Only) */}
-          {isManager && outstanding <= 0 && (
+          {isManager && customerId && outstanding <= 0 && (
             <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex items-center gap-2 text-xs text-slate-600">
               <AlertCircle className="w-4 h-4 text-emerald-600 flex-shrink-0" />
               <span>{t.payment.noDebtNotice}</span>
@@ -237,11 +266,19 @@ function RecordCustomerPaymentContent() {
               placeholder={isManager && outstanding <= 0 ? '0' : 'e.g. 15000'}
               className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-900 font-bold focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 disabled:bg-slate-100 disabled:cursor-not-allowed disabled:text-slate-400"
             />
-            {errors.amount && (
+            {errors.amount ? (
               <p className="text-[11px] text-rose-600 mt-1 leading-tight flex items-start gap-1 font-medium">
                 <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
                 <span>{validationMessage(errors.amount, t)}</span>
               </p>
+            ) : isManager && outstanding > 0 && amount > outstanding ? (
+              <p className="text-[11px] text-rose-600 mt-1 leading-tight flex items-start gap-1 font-medium">
+                <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                <span>{t.validation.paymentExceedsBalance(outstanding)}</span>
+              </p>
+            ) : null}
+            {!customerId && customers.length > 0 && (
+              <p className="text-[11px] text-slate-500 mt-1">{t.validation.chooseCustomer}</p>
             )}
           </div>
 
@@ -299,7 +336,7 @@ function RecordCustomerPaymentContent() {
           <div className="pt-2">
             <button
               type="submit"
-              disabled={isSubmitting || (isManager && (outstanding <= 0 || amount <= 0 || amount > outstanding)) || (!isManager && amount <= 0)}
+              disabled={isSubmitting || !customerId || (isManager && (outstanding <= 0 || amount <= 0 || amount > outstanding)) || (!isManager && amount <= 0)}
               className="w-full py-3 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2 active:scale-[0.99]"
             >
               {isSubmitting ? (
@@ -315,6 +352,16 @@ function RecordCustomerPaymentContent() {
         </form>
       </div>
     </div>
+    <CustomerFormModal
+      isOpen={isAddCustomerOpen}
+      onClose={() => setIsAddCustomerOpen(false)}
+      onCustomerCreated={(customer) => {
+        setCustomerId(customer.id);
+        setAmount(0);
+        setIsAddCustomerOpen(false);
+      }}
+    />
+    </>
   );
 }
 

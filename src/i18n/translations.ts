@@ -437,6 +437,17 @@ export interface Translations {
     telebirr: string;
     bankTransfer: string;
     dismiss: string;
+    noCustomersYet: string;
+    addFirstCustomerHint: string;
+    noProductsYet: string;
+    addFirstProductHint: string;
+    noProductsInStock: string;
+    addStockBeforeSale: string;
+    completeSaleDetails: string;
+    selectProductAndQuantity: string;
+    stockAfter: string;
+    askManagerToAddCustomer: string;
+    askManagerToAddProduct: string;
   };
 }
 
@@ -837,6 +848,17 @@ export const en: Translations = {
     telebirr: 'Telebirr',
     bankTransfer: 'Bank Transfer',
     dismiss: 'Dismiss',
+    noCustomersYet: 'No customers yet',
+    addFirstCustomerHint: 'Add a customer to record a sale or payment.',
+    noProductsYet: 'No products yet',
+    addFirstProductHint: 'Add a product, then add stock before recording a sale.',
+    noProductsInStock: 'No products are in stock.',
+    addStockBeforeSale: 'Add stock before recording a sale.',
+    completeSaleDetails: 'Choose a customer and product, then enter cartons.',
+    selectProductAndQuantity: 'Select a product and enter cartons received.',
+    stockAfter: 'After adding',
+    askManagerToAddCustomer: 'Ask a manager to add a customer.',
+    askManagerToAddProduct: 'Ask a manager to add a product.',
   },
 };
 
@@ -1240,6 +1262,17 @@ export const am: Translations = {
     telebirr: 'ቴሌብር',
     bankTransfer: 'ባንክ',
     dismiss: 'ዝጋ',
+    noCustomersYet: 'ገና ደንበኛ የለም',
+    addFirstCustomerHint: 'ሽያጭ ወይም ክፍያ ለመመዝገብ ደንበኛ ያክሉ።',
+    noProductsYet: 'ገና ምርት የለም',
+    addFirstProductHint: 'ምርት ያክሉ፣ ከዚያ ሽያጭ ከመመዝገብዎ በፊት እቃ ያስገቡ።',
+    noProductsInStock: 'በክምችት ውስጥ ምርት የለም።',
+    addStockBeforeSale: 'ሽያጭ ከመመዝገብዎ በፊት እቃ ያስገቡ።',
+    completeSaleDetails: 'ደንበኛና ምርት ይምረጡ፣ ከዚያ የካርቶን ብዛት ያስገቡ።',
+    selectProductAndQuantity: 'ምርት ይምረጡና የገቡትን ካርቶኖች ብዛት ያስገቡ።',
+    stockAfter: 'ከጨመሩ በኋላ',
+    askManagerToAddCustomer: 'ደንበኛ እንዲጨምር ሥራ አስኪያጅን ይጠይቁ።',
+    askManagerToAddProduct: 'ምርት እንዲጨምር ሥራ አስኪያጅን ይጠይቁ።',
   },
 };
 

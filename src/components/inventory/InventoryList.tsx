@@ -188,8 +188,14 @@ export default function InventoryList() {
         {filteredProducts.length === 0 ? (
           <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center">
             <Layers className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-            <p className="text-sm font-semibold text-slate-700">{t.inventory.noProductsFound}</p>
-            <p className="text-xs text-slate-400 mt-1">{t.inventory.noProductsFoundSub}</p>
+            <p className="text-sm font-semibold text-slate-700">
+              {products.length === 0 ? t.common.noProductsYet : t.inventory.noProductsFound}
+            </p>
+            <p className="text-xs text-slate-400 mt-1">
+              {products.length === 0
+                ? currentUser.role === 'manager' ? t.common.addFirstProductHint : t.common.askManagerToAddProduct
+                : t.inventory.noProductsFoundSub}
+            </p>
           </div>
         ) : (
           filteredProducts.map((product) => {

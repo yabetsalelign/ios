@@ -16,22 +16,24 @@ function RecordSaleContent() {
     products,
     preselectedCustomerId,
     setPreselectedCustomerId,
+    setPreselectedProductId,
     getCustomerSummary,
     executeSale,
+    currentUser,
   } = useStockFlow();
   const { t } = useLanguage();
+  const isManager = currentUser.role === 'manager';
 
-  const [customerId, setCustomerId] = useState<string>(() => preselectedCustomerId || customers[0]?.id || '');
+  const [customerId, setCustomerId] = useState<string>(() => preselectedCustomerId || '');
   const [customerSearch, setCustomerSearch] = useState<string>('');
   const [isAddCustomerOpen, setIsAddCustomerOpen] = useState<boolean>(false);
   const [productSearches, setProductSearches] = useState<Record<number, string>>({});
 
-  const initialProd = products[0];
   const [items, setItems] = useState<SaleItemFormInput[]>([
     {
-      productId: initialProd?.id || '',
-      quantityCartons: 1,
-      pricePerCarton: initialProd?.sellingPricePerCarton || 0,
+      productId: '',
+      quantityCartons: 0,
+      pricePerCarton: 0,
     },
   ]);
   const [amountPaid, setAmountPaid] = useState<number>(0);
@@ -100,6 +102,10 @@ function RecordSaleContent() {
 
     return true;
   }, [customerId, items, products, totalAmount, amountPaid, paymentMethod]);
+  const hasSpecificSaleError = amountPaid < 0 || amountPaid > totalAmount || items.some((item) => {
+    const product = products.find((p) => p.id === item.productId);
+    return item.pricePerCarton < 0 || Boolean(product && item.quantityCartons > product.currentStockCartons);
+  });
 
   const handleClose = () => {
     setActiveModal(null);
@@ -150,13 +156,12 @@ function RecordSaleContent() {
   };
 
   const handleAddItem = () => {
-    const available = products.find((p) => !items.some((it) => it.productId === p.id)) || products[0];
     setItems([
       ...items,
       {
-        productId: available?.id || '',
-        quantityCartons: 1,
-        pricePerCarton: available?.sellingPricePerCarton || 0,
+        productId: '',
+        quantityCartons: 0,
+        pricePerCarton: 0,
       },
     ]);
   };
@@ -284,14 +289,16 @@ function RecordSaleContent() {
                 <label htmlFor="sale-customer" className="block text-xs font-semibold text-slate-700">
                   {t.sale.chooseCustomer} <span className="text-rose-500">*</span>
                 </label>
-                <button
-                  type="button"
-                  onClick={() => setIsAddCustomerOpen(true)}
-                  className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 active:scale-95 transition-all"
-                >
-                  <UserPlus className="w-3.5 h-3.5" />
-                  <span>+ {t.sale.addCustomer}</span>
-                </button>
+                {isManager && (
+                  <button
+                    type="button"
+                    onClick={() => setIsAddCustomerOpen(true)}
+                    className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 active:scale-95 transition-all"
+                  >
+                    <UserPlus className="w-3.5 h-3.5" />
+                    <span>+ {t.sale.addCustomer}</span>
+                  </button>
+                )}
               </div>
 
               {/* Customer Search input */}
@@ -309,7 +316,14 @@ function RecordSaleContent() {
               <select
                 id="sale-customer"
                 value={customerId}
-                onChange={(e) => setCustomerId(e.target.value)}
+                onChange={(e) => {
+                  setCustomerId(e.target.value);
+                  if (errors.customerId) {
+                    const nextErrors = { ...errors };
+                    delete nextErrors.customerId;
+                    setErrors(nextErrors);
+                  }
+                }}
                 className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-900 focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 font-medium"
               >
                 <option value="">-- {t.sale.chooseCustomer} --</option>
@@ -322,6 +336,12 @@ function RecordSaleContent() {
                   );
                 })}
               </select>
+
+              {customers.length === 0 && (
+                <p className="text-[11px] text-slate-500">
+                  {isManager ? t.common.addFirstCustomerHint : t.common.askManagerToAddCustomer}
+                </p>
+              )}
 
               {errors.customerId && (
                 <p className="text-[11px] text-rose-600 mt-1 flex items-center gap-1 font-medium">
@@ -380,6 +400,42 @@ function RecordSaleContent() {
                 </p>
               )}
 
+              {products.length === 0 ? (
+                <div className="p-3 bg-blue-50/50 border border-blue-100 rounded-xl text-xs">
+                  <p className="font-semibold text-slate-800">{t.common.noProductsYet}</p>
+                  <p className="text-slate-600 mt-1">
+                    {isManager ? t.common.addFirstProductHint : t.common.askManagerToAddProduct}
+                  </p>
+                  {isManager && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPreselectedProductId(null);
+                        setActiveModal('add_product');
+                      }}
+                      className="mt-2 text-xs font-semibold text-blue-700"
+                    >
+                      {t.inventory.addProduct}
+                    </button>
+                  )}
+                </div>
+              ) : !products.some((product) => product.currentStockCartons > 0) ? (
+                <div className="p-3 bg-amber-50/70 border border-amber-200/80 rounded-xl text-xs">
+                  <p className="font-semibold text-amber-900">{t.common.noProductsInStock}</p>
+                  <p className="text-amber-800 mt-1">{t.common.addStockBeforeSale}</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPreselectedProductId(products[0]?.id ?? null);
+                      setActiveModal('purchase');
+                    }}
+                    className="mt-2 text-xs font-semibold text-blue-700"
+                  >
+                    {t.inventory.addStock}
+                  </button>
+                </div>
+              ) : null}
+
               {/* Product Item Cards */}
               <div className="space-y-3">
                 {items.map((item, idx) => {
@@ -436,8 +492,8 @@ function RecordSaleContent() {
                         >
                           <option value="">-- Choose a product --</option>
                           {filteredProducts.map((p) => (
-                            <option key={p.id} value={p.id}>
-                              {p.name} — {p.currentStockCartons} {t.inventory.cartons} {t.inventory.inStock} (SKU: {p.sku})
+                            <option key={p.id} value={p.id} disabled={p.currentStockCartons <= 0}>
+                              {p.name} — {p.currentStockCartons} {t.inventory.cartons} {p.currentStockCartons <= 0 ? t.sale.outOfStock : t.inventory.inStock} (SKU: {p.sku})
                             </option>
                           ))}
                         </select>
@@ -543,6 +599,9 @@ function RecordSaleContent() {
                             onChange={(e) => handlePriceChange(idx, e.target.value)}
                             className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-900 font-semibold"
                           />
+                          {item.pricePerCarton < 0 && (
+                            <p className="text-[10px] text-rose-600 mt-1">{t.validation.priceNegative}</p>
+                          )}
                         </div>
                       </div>
 
@@ -633,6 +692,16 @@ function RecordSaleContent() {
                       <span>{validationMessage(errors.amountPaid, t)}</span>
                     </p>
                   )}
+                  {amountPaid < 0 && (
+                    <p className="text-[10px] text-rose-600 mt-1 leading-tight">
+                      {t.validation.amountPaidNegative}
+                    </p>
+                  )}
+                  {amountPaid > totalAmount && (
+                    <p className="text-[10px] text-rose-600 mt-1 leading-tight">
+                      {t.validation.amountPaidExceedsTotal(amountPaid, totalAmount)}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -699,6 +768,11 @@ function RecordSaleContent() {
                   <span>{t.sale.submit}</span>
                 )}
               </button>
+              {!isSaleValid && !hasSpecificSaleError && customers.length > 0 && products.some((product) => product.currentStockCartons > 0) && (
+                <p className="mt-2 text-center text-[11px] text-slate-500">
+                  {t.common.completeSaleDetails}
+                </p>
+              )}
             </div>
           </form>
         </div>
