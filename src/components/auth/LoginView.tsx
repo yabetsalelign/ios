@@ -6,7 +6,7 @@ import { useStockFlow } from '../../context/StockFlowContext';
 import { useLanguage } from '../../context/LanguageContext';
 
 // View modes for the login card
-type LoginMode = 'sign-in' | 'request-setup' | 'create-password';
+type LoginMode = 'sign-in' | 'forgot-password' | 'create-password';
 
 export default function LoginView() {
   const { login, isFirstTimeSetup, invitedEmail, completeFirstTimeSetup, requestAccountSetup } = useStockFlow();
@@ -14,7 +14,7 @@ export default function LoginView() {
 
   // Derive mode:
   //   isFirstTimeSetup=true  → a valid invite/recovery session is active  → 'create-password'
-  //   otherwise              → normal sign-in or request-setup
+  //   otherwise              → normal sign-in or password recovery
   const [mode, setMode] = useState<LoginMode>(isFirstTimeSetup ? 'create-password' : 'sign-in');
 
   // Keep mode in sync with context-driven isFirstTimeSetup transitions
@@ -30,9 +30,9 @@ export default function LoginView() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  // ── Set Up Account — email-entry state ───────────────────────────────────
-  const [setupEmail, setSetupEmail] = useState('');
-  const [setupSent, setSetupSent] = useState(false);
+  // ── Password recovery — email-entry state ────────────────────────────────
+  const [recoveryEmail, setRecoveryEmail] = useState('');
+  const [recoverySent, setRecoverySent] = useState(false);
 
   // ── Create Password state (invite / recovery session) ────────────────────
   const [newPassword, setNewPassword] = useState('');
@@ -84,18 +84,18 @@ export default function LoginView() {
     }
   };
 
-  const handleSetupRequest = async (e: React.FormEvent) => {
+  const handlePasswordRecoveryRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!setupEmail.trim()) {
+    if (!recoveryEmail.trim()) {
       setError(language === 'am' ? 'እባክዎን ኢሜይልዎን ያስገቡ' : 'Please enter your email address.');
       return;
     }
     setIsSubmitting(true);
     // Always returns { success: true } to avoid account-enumeration.
     // Any transport error is silently swallowed inside requestAccountSetup.
-    await requestAccountSetup(setupEmail.trim().toLowerCase());
-    setSetupSent(true);
+    await requestAccountSetup(recoveryEmail.trim().toLowerCase());
+    setRecoverySent(true);
     setIsSubmitting(false);
   };
 
@@ -213,15 +213,15 @@ export default function LoginView() {
               </>
             )}
 
-            {mode === 'request-setup' && (
+            {mode === 'forgot-password' && (
               <>
                 <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
-                  {language === 'am' ? 'መለያ ያዋቅሩ' : 'Set up your account'}
+                  {language === 'am' ? 'የይለፍ ቃልዎን ዳግም ያስጀምሩ' : 'Reset your password'}
                 </h1>
                 <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
                   {language === 'am'
-                    ? 'ኢሜይልዎን ያስገቡ — ደህንነቱ የተጠበቀ ቅንጅት ማገናኛ እንልክልዎታለን'
-                    : 'Enter your email — we\'ll send you a secure setup link'}
+                    ? 'መለያ ካለ የይለፍ ቃል ማስጀመሪያ ማገናኛ እንልካለን።'
+                    : 'If an account exists, we\'ll send a password reset link.'}
                 </p>
               </>
             )}
@@ -312,34 +312,34 @@ export default function LoginView() {
                 )}
               </button>
 
-              {/* ── Set Up Account link ── */}
+              {/* ── Password recovery link ── */}
               <div className="pt-1 text-center">
                 <button
                   type="button"
-                  id="go-to-setup-btn"
-                  onClick={() => { setError(''); setMode('request-setup'); }}
+                  id="forgot-password-btn"
+                  onClick={() => { setError(''); setRecoverySent(false); setMode('forgot-password'); }}
                   className="text-[11px] text-slate-500 hover:text-slate-800 underline underline-offset-2 transition-colors"
                 >
-                  {language === 'am' ? 'ተጋብዘዋል? የይለፍ ቃልዎን ያዋቅሩ' : 'Already invited? Set up your password'}
+                  {language === 'am' ? 'የይለፍ ቃል ረሱ?' : 'Forgot password?'}
                 </button>
               </div>
             </form>
           )}
 
-          {/* ── MODE: request-setup ───────────────────────────────────────── */}
-          {mode === 'request-setup' && !setupSent && (
-            <form onSubmit={handleSetupRequest} className="space-y-4">
+          {/* ── MODE: forgot-password ─────────────────────────────────────── */}
+          {mode === 'forgot-password' && !recoverySent && (
+            <form onSubmit={handlePasswordRecoveryRequest} className="space-y-4">
               <div>
-                <label htmlFor="setup-email" className="block text-xs font-semibold text-slate-700 mb-1">
+                <label htmlFor="recovery-email" className="block text-xs font-semibold text-slate-700 mb-1">
                   {language === 'am' ? 'ኢሜይል' : 'Email address'}
                 </label>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
-                    id="setup-email"
+                    id="recovery-email"
                     type="email"
-                    value={setupEmail}
-                    onChange={(e) => setSetupEmail(e.target.value)}
+                    value={recoveryEmail}
+                    onChange={(e) => setRecoveryEmail(e.target.value)}
                     placeholder="name@stockflow.app"
                     required
                     autoComplete="email"
@@ -350,17 +350,17 @@ export default function LoginView() {
 
               <button
                 type="submit"
-                id="request-setup-btn"
+                id="request-recovery-btn"
                 disabled={isSubmitting}
                 className="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white rounded-xl text-xs font-bold transition-all shadow-sm active:scale-[0.99] flex items-center justify-center gap-2 mt-2"
               >
                 {isSubmitting ? (
                   <span className="flex items-center gap-2">
                     <Spinner />
-                    {language === 'am' ? 'እየላኩ ነው...' : 'Sending link...'}
+                    {language === 'am' ? 'እየላኩ ነው...' : 'Sending recovery link...'}
                   </span>
                 ) : (
-                  <><span>{language === 'am' ? 'ቅንጅት ማገናኛ ላክ' : 'Send setup link'}</span><ArrowRight className="w-4 h-4" /></>
+                  <><span>{language === 'am' ? 'የይለፍ ቃል ማገናኛ ላክ' : 'Send recovery link'}</span><ArrowRight className="w-4 h-4" /></>
                 )}
               </button>
 
@@ -378,8 +378,8 @@ export default function LoginView() {
             </form>
           )}
 
-          {/* ── MODE: request-setup — success state ──────────────────────── */}
-          {mode === 'request-setup' && setupSent && (
+          {/* ── MODE: forgot-password — success state ────────────────────── */}
+          {mode === 'forgot-password' && recoverySent && (
             <div className="space-y-5">
               <div className="flex flex-col items-center gap-3 py-3 text-center">
                 <div className="w-12 h-12 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center">
@@ -387,8 +387,8 @@ export default function LoginView() {
                 </div>
                 <p className="text-xs text-slate-700 leading-relaxed max-w-xs">
                   {language === 'am'
-                    ? 'ለዚህ ኢሜይል መለያ ካለ፣ ደህንነቱ የተጠበቀ ቅንጅት ማገናኛ ወደ የገቢ መልዕክት ሳጥናቸው ተልኳል።'
-                    : 'If an account exists for this email, check your inbox for a secure setup link.'}
+                    ? 'ለዚህ ኢሜይል መለያ ካለ የይለፍ ቃል ማስጀመሪያ ማገናኛ ወደ ገቢ መልዕክት ሳጥንዎ ተልኳል።'
+                    : 'If an account exists for this email, check your inbox for a password reset link.'}
                 </p>
                 <p className="text-[10px] text-slate-400">
                   {language === 'am' ? 'ኢሜይሉ ካልደረሰ ስፓምን ያረጋግጡ' : 'Didn\'t receive it? Check your spam folder.'}
@@ -398,11 +398,11 @@ export default function LoginView() {
               <button
                 type="button"
                 id="back-to-signin-from-success-btn"
-                onClick={() => { setMode('sign-in'); setSetupSent(false); setSetupEmail(''); }}
+                onClick={() => { setMode('sign-in'); setRecoverySent(false); setRecoveryEmail(''); }}
                 className="w-full py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2"
               >
                 <ArrowLeft className="w-4 h-4" />
-                {language === 'am' ? 'ወደ ሙሉ ግቤት ተመለስ' : 'Back to sign in'}
+                {language === 'am' ? 'ወደ መግቢያ ተመለስ' : 'Back to sign in'}
               </button>
             </div>
           )}
