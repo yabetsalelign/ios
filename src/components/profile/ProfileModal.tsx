@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useEffect } from 'react';
-import { X, ShieldCheck, Package, Globe, LogOut, CheckCircle2, Sliders } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { X, ShieldCheck, Package, Globe, LogOut, CheckCircle2, Sliders, Mail, Send } from 'lucide-react';
 import { useStockFlow } from '../../context/StockFlowContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { supabase } from '../../lib/supabase/client';
 
 export default function ProfileModal() {
   const {
@@ -13,6 +14,10 @@ export default function ProfileModal() {
     logout,
   } = useStockFlow();
   const { language, setLanguage, t } = useLanguage();
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteStatus, setInviteStatus] = useState<'idle' | 'success' | 'error' | 'cooldown'>('idle');
+  const [isInviting, setIsInviting] = useState(false);
+  const [lastInvite, setLastInvite] = useState<{ email: string; at: number } | null>(null);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -27,6 +32,34 @@ export default function ProfileModal() {
   if (!isProfileOpen) return null;
 
   const isManager = currentUser.role === 'manager';
+
+  const sendStaffInvitation = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const email = inviteEmail.trim().toLowerCase();
+    if (isInviting) return;
+    if (lastInvite?.email === email && Date.now() - lastInvite.at < 30_000) {
+      setInviteStatus('cooldown');
+      return;
+    }
+
+    setIsInviting(true);
+    setInviteStatus('idle');
+    try {
+      const { error } = await supabase.functions.invoke('invite-staff', {
+        body: { email },
+      });
+      if (error) {
+        setInviteStatus('error');
+      } else {
+        setLastInvite({ email, at: Date.now() });
+        setInviteStatus('success');
+      }
+    } catch {
+      setInviteStatus('error');
+    } finally {
+      setIsInviting(false);
+    }
+  };
 
   return (
     <div
@@ -91,6 +124,52 @@ export default function ProfileModal() {
             {isManager ? t.profile.managerScope : t.profile.warehouseScope}
           </p>
         </div>
+
+        {isManager && (
+          <section className="mt-4 p-3.5 rounded-2xl border border-slate-200/80 bg-white">
+            <div className="flex items-center gap-2 mb-3">
+              <Mail className="w-4 h-4 text-slate-500" />
+              <h3 className="text-xs font-bold text-slate-900">
+                {language === 'am' ? 'የመጋዘን ሠራተኛ ጋብዝ' : 'Invite staff member'}
+              </h3>
+            </div>
+            <form onSubmit={sendStaffInvitation} className="space-y-2.5">
+              <label htmlFor="invite-staff-email" className="block text-xs font-semibold text-slate-700">
+                {language === 'am' ? 'ኢሜይል' : 'Email'}
+              </label>
+              <input
+                id="invite-staff-email"
+                type="email"
+                autoComplete="email"
+                required
+                value={inviteEmail}
+                onChange={(event) => {
+                  setInviteEmail(event.target.value);
+                  setInviteStatus('idle');
+                }}
+                placeholder="name@stockflow.app"
+                className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900"
+              />
+              <button
+                type="submit"
+                disabled={isInviting || inviteStatus === 'success'}
+                className="w-full py-2.5 px-3 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-2"
+              >
+                {isInviting ? <span>{language === 'am' ? 'በመላክ ላይ...' : 'Sending...'}</span> : (
+                  <>
+                    <Send className="w-3.5 h-3.5" />
+                    <span>{language === 'am' ? 'ግብዣ ላክ' : 'Send invitation'}</span>
+                  </>
+                )}
+              </button>
+            </form>
+            <p aria-live="polite" className={`mt-2 text-[11px] ${inviteStatus === 'success' ? 'text-emerald-700' : 'text-rose-700'}`}>
+              {inviteStatus === 'success' && (language === 'am' ? 'ግብዣው ተልኳል።' : 'Invitation sent.')}
+              {inviteStatus === 'error' && (language === 'am' ? 'ግብዣውን መላክ አልተቻለም። እንደገና ይሞክሩ።' : 'Could not send the invitation. Please try again.')}
+              {inviteStatus === 'cooldown' && (language === 'am' ? 'እባክዎ እንደገና ከመላክዎ በፊት 30 ሰከንድ ይጠብቁ።' : 'Please wait 30 seconds before resending to this address.')}
+            </p>
+          </section>
+        )}
 
         {/* Language Preference */}
         <div className="mt-4 p-3.5 rounded-2xl border border-slate-200/80 bg-white">

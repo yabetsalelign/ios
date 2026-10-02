@@ -320,7 +320,7 @@ export default function LoginView() {
                   onClick={() => { setError(''); setMode('request-setup'); }}
                   className="text-[11px] text-slate-500 hover:text-slate-800 underline underline-offset-2 transition-colors"
                 >
-                  {language === 'am' ? 'አዲስ ወደ StockFlow? መለያዎን ያዋቅሩ' : 'New to StockFlow? Set up your account'}
+                  {language === 'am' ? 'ተጋብዘዋል? የይለፍ ቃልዎን ያዋቅሩ' : 'Already invited? Set up your password'}
                 </button>
               </div>
             </form>
