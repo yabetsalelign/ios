@@ -43,6 +43,10 @@ export interface Translations {
     managerScope: string;
     warehouseScope: string;
     language: string;
+    appearance: string;
+    light: string;
+    dark: string;
+    system: string;
     currency: string;
     offlineStatus: string;
     ready: string;
@@ -467,6 +471,10 @@ export const en: Translations = {
     managerScope: 'Full access: pricing, customer balances, sales, and reports.',
     warehouseScope: 'Stock work: carton counts, receiving, and inventory activity.',
     language: 'Interface Language',
+    appearance: 'Appearance',
+    light: 'Light',
+    dark: 'Dark',
+    system: 'System',
     currency: 'Currency Standard',
     offlineStatus: 'Sync & Local Storage',
     ready: 'Online & Synchronized',
@@ -864,6 +872,10 @@ export const am: Translations = {
     managerScope: 'ሙሉ አስተዳደር፦ ዋጋዎች፣ የደንበኛ ሂሳብ፣ ሽያጭና ሪፖርቶች።',
     warehouseScope: 'የእቃ ሥራ፦ የካርቶን ቆጠራ፣ መቀበልና የእቃ እንቅስቃሴ።',
     language: 'የስርዓቱ ቋንቋ',
+    appearance: 'ገጽታ',
+    light: 'ብርሃን',
+    dark: 'ጨለማ',
+    system: 'የመሣሪያው ቅንብር',
     currency: 'የገንዘብ ምንዛሬ',
     offlineStatus: 'የማመሳሰል ሁኔታ',
     ready: 'የተገናኘ & ዝግጁ',

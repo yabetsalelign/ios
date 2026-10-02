@@ -560,7 +560,7 @@ function RecordSaleContent() {
             </div>
 
             {/* Sale Total Display */}
-            <div className="p-3.5 bg-slate-900 text-white rounded-2xl flex items-center justify-between">
+            <div data-total-summary className="p-3.5 bg-slate-900 text-white rounded-2xl flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-300">{t.sale.totalSale}</span>
               <span className="text-lg font-extrabold tracking-tight font-mono">
                 {totalAmount.toLocaleString()} {t.sale.etb}

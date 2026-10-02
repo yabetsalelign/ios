@@ -6,6 +6,8 @@ import { useStockFlow } from '../../context/StockFlowContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { supabase } from '../../lib/supabase/client';
 
+type Appearance = 'light' | 'dark' | 'system';
+
 export default function ProfileModal() {
   const {
     isProfileOpen,
@@ -18,6 +20,21 @@ export default function ProfileModal() {
   const [inviteStatus, setInviteStatus] = useState<'idle' | 'success' | 'error' | 'cooldown'>('idle');
   const [isInviting, setIsInviting] = useState(false);
   const [lastInvite, setLastInvite] = useState<{ email: string; at: number } | null>(null);
+  const [appearance, setAppearance] = useState<Appearance>(() => {
+    if (typeof document === 'undefined') return 'light';
+    const storedAppearance = document.documentElement.dataset.appearance;
+    return storedAppearance === 'dark' || storedAppearance === 'system' ? storedAppearance : 'light';
+  });
+
+  useEffect(() => {
+    const isDark = appearance === 'dark' || (
+      appearance === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches
+    );
+    document.documentElement.dataset.appearance = appearance;
+    document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', isDark ? '#0b1220' : '#FFFFFF');
+    window.dispatchEvent(new Event('stockflow_appearance_change'));
+  }, [appearance]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -32,6 +49,15 @@ export default function ProfileModal() {
   if (!isProfileOpen) return null;
 
   const isManager = currentUser.role === 'manager';
+
+  const updateAppearance = (nextAppearance: Appearance) => {
+    setAppearance(nextAppearance);
+    try {
+      localStorage.setItem('sf_appearance', nextAppearance);
+    } catch {
+      // The current page can still use the selected appearance if storage is unavailable.
+    }
+  };
 
   const sendStaffInvitation = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -170,6 +196,30 @@ export default function ProfileModal() {
             </p>
           </section>
         )}
+
+        <section className="mt-4 p-3.5 rounded-2xl border border-slate-200/80 bg-white">
+          <div className="flex items-center gap-2 mb-2">
+            <Sliders className="w-4 h-4 text-slate-500" />
+            <span className="text-xs font-bold text-slate-900">{t.profile.appearance}</span>
+          </div>
+          <div role="group" aria-label={t.profile.appearance} data-appearance-control className="grid grid-cols-3 gap-1 p-1 bg-slate-100 rounded-lg text-xs font-semibold">
+            {(['light', 'dark', 'system'] as const).map((option) => (
+              <button
+                key={option}
+                type="button"
+                aria-pressed={appearance === option}
+                onClick={() => updateAppearance(option)}
+                className={`py-2 px-2 rounded-md transition-colors ${
+                  appearance === option
+                    ? 'bg-white text-slate-900 shadow-2xs'
+                    : 'text-slate-500 hover:text-slate-900'
+                }`}
+              >
+                {t.profile[option]}
+              </button>
+            ))}
+          </div>
+        </section>
 
         {/* Language Preference */}
         <div className="mt-4 p-3.5 rounded-2xl border border-slate-200/80 bg-white">

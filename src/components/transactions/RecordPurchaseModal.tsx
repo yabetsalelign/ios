@@ -203,7 +203,7 @@ function RecordPurchaseContent() {
           </div>
 
           {/* Total Cost Display */}
-          <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center justify-between">
+          <div data-total-summary className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-600">{t.purchase.totalCost}</span>
             <span className="text-base font-extrabold text-slate-900 font-mono">
               {totalCost.toLocaleString()} {t.purchase.etb}
