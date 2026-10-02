@@ -39,7 +39,6 @@ export interface Database {
           id: string;
           name: string;
           sku: string;
-          barcode: string | null;
           description: string | null;
           category: string | null;
           image_url: string | null;
@@ -54,7 +53,6 @@ export interface Database {
           id?: string;
           name: string;
           sku: string;
-          barcode?: string | null;
           description?: string | null;
           category?: string | null;
           image_url?: string | null;
@@ -69,7 +67,6 @@ export interface Database {
           id?: string;
           name?: string;
           sku?: string;
-          barcode?: string | null;
           description?: string | null;
           category?: string | null;
           image_url?: string | null;

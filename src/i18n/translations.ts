@@ -154,11 +154,7 @@ export interface Translations {
     costPrice: string;
     addStock: string;
     editProduct: string;
-    barcode: string;
     description: string;
-    scanTitle: string;
-    scanHint: string;
-    scanDone: string;
     metadata: string;
     perCarton: string;
   };
@@ -333,8 +329,6 @@ export interface Translations {
     namePlaceholder: string;
     sku: string;
     skuPlaceholder: string;
-    barcode: string;
-    barcodePlaceholder: string;
     description: string;
     descriptionPlaceholder: string;
     category: string;
@@ -408,7 +402,6 @@ export interface Translations {
     productNameRequired: string;
     skuRequired: string;
     skuDuplicate: string;
-    barcodeDuplicate: string;
     piecesPositiveInteger: string;
     thresholdNonNegativeInteger: string;
     saleTotalZero: string;
@@ -561,7 +554,7 @@ export const en: Translations = {
   inventory: {
     title: 'Stock',
     subtitle: 'Manage products and carton counts',
-    searchPlaceholder: 'Search by product name or code…',
+    searchPlaceholder: 'Search by product name or SKU…',
     addProduct: 'New Product',
     filterAll: 'All',
     filterInStock: 'In Stock',
@@ -583,11 +576,7 @@ export const en: Translations = {
     costPrice: 'Cost Price / Carton',
     addStock: 'Add Stock',
     editProduct: 'Edit Product',
-    barcode: 'Barcode',
     description: 'Description',
-    scanTitle: 'Scan barcode',
-    scanHint: 'Place a barcode in the frame to find the product.',
-    scanDone: 'Done',
     metadata: 'Info',
     perCarton: '/ ctn',
   },
@@ -747,8 +736,6 @@ export const en: Translations = {
     namePlaceholder: 'e.g. Shower Gel 500ml',
     sku: 'Product code (SKU)',
     skuPlaceholder: 'e.g. SH-001',
-    barcode: 'Barcode',
-    barcodePlaceholder: 'Enter barcode',
     description: 'Description',
     descriptionPlaceholder: 'Size, packaging, or other details…',
     category: 'Category',
@@ -821,7 +808,6 @@ export const en: Translations = {
     productNameRequired: 'Enter a product name.',
     skuRequired: 'Enter a product code.',
     skuDuplicate: 'A product with this code already exists.',
-    barcodeDuplicate: 'A product with this barcode already exists.',
     piecesPositiveInteger: 'Enter a whole number of pieces greater than 0.',
     thresholdNonNegativeInteger: 'Enter a whole number, 0 or more.',
     saleTotalZero: 'Sale total must be greater than zero ETB.',
@@ -995,11 +981,7 @@ export const am: Translations = {
     costPrice: 'የዋጋ ወጪ / ካርቶን',
     addStock: 'እቃ ጨምር',
     editProduct: 'እቃ አስተካክል',
-    barcode: 'ባርኮድ',
     description: 'መግለጫ',
-    scanTitle: 'ባርኮድ ይቃኙ',
-    scanHint: 'የእቃውን ባርኮድ በፍሬሙ ውስጥ ያስቀምጡ።',
-    scanDone: 'ተጠናቋል',
     metadata: 'መረጃ',
     perCarton: '/ ካርቶን',
   },
@@ -1160,8 +1142,6 @@ export const am: Translations = {
     namePlaceholder: 'ለምሳሌ፦ ሻወር ጄል 500ml',
     sku: 'SKU (የእቃ መለያ ኮድ)',
     skuPlaceholder: 'ለምሳሌ፦ SH-001',
-    barcode: 'ባርኮድ',
-    barcodePlaceholder: 'ለምሳሌ፦ 690123456701 (በእጅ አስገባ)',
     description: 'መግለጫ',
     descriptionPlaceholder: 'የእቃው ዝርዝር ሁኔታ፣ ማስታወሻ…',
     category: 'ምድብ',
@@ -1234,7 +1214,6 @@ export const am: Translations = {
     productNameRequired: 'የእቃ ስም ማስገባት ግዴታ ነው።',
     skuRequired: 'SKU (የእቃ መለያ ኮድ) ማስገባት ግዴታ ነው።',
     skuDuplicate: 'በዚህ SKU የተመዘገበ እቃ አስቀድሞ አለ።',
-    barcodeDuplicate: 'በዚህ ባርኮድ የተመዘገበ እቃ አስቀድሞ አለ።',
     piecesPositiveInteger: 'በካርቶን ያለው ፕስ ሙሉ አዎንታዊ ቁጥር መሆን አለበት።',
     thresholdNonNegativeInteger: 'ዝቅተኛ ክምችት ማስጠንቀቂያ 0 ወይም ከዚያ በላይ ሙሉ ቁጥር መሆን አለበት።',
     saleTotalZero: 'የሽያጭ ድምር ከ 0 ብር በላይ መሆን አለበት።',

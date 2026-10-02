@@ -175,7 +175,7 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
       // 1. Products — stock levels come from v_product_stock view
       const [{ data: productRows }, { data: stockRows }] = await Promise.all([
         (supabase.from('products') as any).select(
-          'id, name, sku, barcode, description, category, image_url, pieces_per_carton, selling_price_per_carton, cost_per_carton, low_stock_threshold_cartons, created_at'
+          'id, name, sku, description, category, image_url, pieces_per_carton, selling_price_per_carton, cost_per_carton, low_stock_threshold_cartons, created_at'
         ).order('created_at', { ascending: false }),
         (supabase.from('v_product_stock') as any).select('product_id, current_stock_cartons'),
       ]);
@@ -187,7 +187,6 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
           id: r.id,
           name: r.name,
           sku: r.sku,
-          barcode: r.barcode ?? undefined,
           description: r.description ?? undefined,
           category: r.category ?? 'General',
           image: r.image_url || 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=200&auto=format&fit=crop&q=80',
@@ -1047,7 +1046,6 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
 
     const cleanName = input.name.trim();
     const cleanSku = input.sku.trim().toUpperCase();
-    const cleanBarcode = input.barcode?.trim() || null;
     const cleanDescription = input.description?.trim() || null;
     const cleanCategory = input.category?.trim() || 'General';
     const fallbackImage = 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=200&auto=format&fit=crop&q=80';
@@ -1069,7 +1067,6 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
             .update({
               name: cleanName,
               sku: cleanSku,
-              barcode: cleanBarcode,
               description: cleanDescription,
               category: cleanCategory,
               image_url: cleanImage,
@@ -1094,7 +1091,6 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
                   ...p,
                   name: data.name,
                   sku: data.sku,
-                  barcode: data.barcode || undefined,
                   description: data.description || undefined,
                   category: data.category || cleanCategory,
                   image: data.image_url || cleanImage,
@@ -1123,7 +1119,6 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
             .insert({
               name: cleanName,
               sku: cleanSku,
-              barcode: cleanBarcode,
               description: cleanDescription,
               category: cleanCategory,
               image_url: cleanImage,
@@ -1144,7 +1139,6 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
             id: data.id,
             name: data.name,
             sku: data.sku,
-            barcode: data.barcode || undefined,
             description: data.description || undefined,
             category: data.category || cleanCategory,
             image: data.image_url || cleanImage,
@@ -1185,7 +1179,6 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
               ...p,
               name: cleanName,
               sku: cleanSku,
-              barcode: cleanBarcode || undefined,
               description: cleanDescription || undefined,
               category: cleanCategory,
               image: cleanImage,
@@ -1212,7 +1205,6 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
         id: `prod-${Date.now()}`,
         name: cleanName,
         sku: cleanSku,
-        barcode: cleanBarcode || undefined,
         description: cleanDescription || undefined,
         category: cleanCategory,
         image: cleanImage,

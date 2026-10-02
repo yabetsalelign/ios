@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { X, PackagePlus, Edit3, Upload, Image as ImageIcon, Barcode, AlertCircle, Loader2, Camera, ScanLine, XCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, PackagePlus, Edit3, Upload, Image as ImageIcon, AlertCircle, Loader2, Camera, ChevronDown, ChevronUp } from 'lucide-react';
 import { useStockFlow } from '../../context/StockFlowContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { uploadProductImage } from '../../lib/supabase/storage';
@@ -21,15 +21,6 @@ export default function ProductFormModal() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  // Barcode scanner state
-  const [isScannerOpen, setIsScannerOpen] = useState(false);
-  const [isScannerSupported, setIsScannerSupported] = useState(false);
-  const [scannerError, setScannerError] = useState<string>('');
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const detectorRef = useRef<BarcodeDetector | null>(null);
-  const animFrameRef = useRef<number>(0);
-
   // Determine if editing or creating
   const editingProduct = preselectedProductId
     ? products.find((p) => p.id === preselectedProductId)
@@ -40,7 +31,6 @@ export default function ProductFormModal() {
   // Form State
   const [name, setName] = useState('');
   const [sku, setSku] = useState('');
-  const [barcode, setBarcode] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
   const [image, setImage] = useState('');
@@ -65,7 +55,6 @@ export default function ProductFormModal() {
       if (editingProduct) {
         setName(editingProduct.name || '');
         setSku(editingProduct.sku || '');
-        setBarcode(editingProduct.barcode || '');
         setDescription(editingProduct.description || '');
         setCategory(editingProduct.category || '');
         setImage(editingProduct.image || '');
@@ -77,7 +66,6 @@ export default function ProductFormModal() {
       } else {
         setName('');
         setSku('');
-        setBarcode('');
         setDescription('');
         setCategory('');
         setImage('');
@@ -91,85 +79,6 @@ export default function ProductFormModal() {
       setErrors({});
     }
   }, [activeModal, editingProduct]);
-
-  // Detect BarcodeDetector support on mount (client-only)
-  useEffect(() => {
-    if (typeof window !== 'undefined' && 'BarcodeDetector' in window) {
-      setIsScannerSupported(true);
-    }
-  }, []);
-
-  // Cleanup scanner resources on unmount or close
-  const stopScanner = useCallback(() => {
-    if (animFrameRef.current) {
-      cancelAnimationFrame(animFrameRef.current);
-      animFrameRef.current = 0;
-    }
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((t) => t.stop());
-      streamRef.current = null;
-    }
-    setIsScannerOpen(false);
-    setScannerError('');
-  }, []);
-
-  // Cleanup on modal close or unmount
-  useEffect(() => {
-    if (activeModal !== 'add_product') stopScanner();
-  }, [activeModal, stopScanner]);
-
-  const startScanner = async () => {
-    setScannerError('');
-    setIsScannerOpen(true);
-
-    try {
-      // Build detector once
-      if (!detectorRef.current) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        detectorRef.current = new (window as any).BarcodeDetector({
-          formats: ['ean_13', 'ean_8', 'code_128', 'code_39', 'qr_code', 'upc_a', 'upc_e', 'itf', 'data_matrix'],
-        });
-      }
-
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
-      });
-      streamRef.current = stream;
-
-      // Attach stream to video element after it renders
-      await new Promise<void>((resolve) => setTimeout(resolve, 50));
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
-
-      // Scan loop
-      const scan = async () => {
-        if (!videoRef.current || !detectorRef.current || !streamRef.current) return;
-        try {
-          const codes = await detectorRef.current.detect(videoRef.current);
-          if (codes.length > 0) {
-            setBarcode(codes[0].rawValue);
-            stopScanner();
-            return;
-          }
-        } catch {
-          // Detection frame error — continue loop
-        }
-        animFrameRef.current = requestAnimationFrame(scan);
-      };
-      animFrameRef.current = requestAnimationFrame(scan);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      setScannerError(
-        msg.toLowerCase().includes('permission') || msg.toLowerCase().includes('denied')
-          ? 'Camera access denied. Enter barcode manually.'
-          : 'Camera unavailable. Enter barcode manually.'
-      );
-      stopScanner();
-      setIsScannerOpen(false);
-    }
-  };
 
   if (activeModal !== 'add_product') return null;
 
@@ -199,7 +108,6 @@ export default function ProductFormModal() {
     if (errorKey === 'productNameRequired') return t.validation.productNameRequired;
     if (errorKey === 'skuRequired') return t.validation.skuRequired;
     if (errorKey === 'skuDuplicate') return t.validation.skuDuplicate;
-    if (errorKey === 'barcodeDuplicate') return t.validation.barcodeDuplicate;
     if (errorKey === 'priceNegative') return t.validation.priceNegative;
     if (errorKey === 'costNegative') return t.validation.costNegative;
     if (errorKey === 'piecesPositiveInteger') return t.validation.piecesPositiveInteger;
@@ -258,7 +166,6 @@ export default function ProductFormModal() {
       {
         name,
         sku: effectiveSku,
-        barcode: barcode.trim() || undefined,
         description: description.trim() || undefined,
         category: category.trim() || undefined,
         image: finalImageUrl || undefined,
@@ -279,7 +186,6 @@ export default function ProductFormModal() {
       // Auto-expand More Details if any secondary field has an error
       if (
         result.validationErrors.sku ||
-        result.validationErrors.barcode ||
         result.validationErrors.piecesPerCarton ||
         result.validationErrors.lowStockThresholdCartons ||
         result.validationErrors.image
@@ -493,8 +399,8 @@ export default function ProductFormModal() {
                 )}
               </div>
 
-              {/* SKU & Barcode Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Product code */}
+              <div className="grid grid-cols-1 gap-3">
                 {/* SKU */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
@@ -514,74 +420,6 @@ export default function ProductFormModal() {
                   )}
                 </div>
 
-                {/* Barcode (Manual entry + optional camera scan) */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    <span className="inline-flex items-center gap-1">
-                      <Barcode className="w-3.5 h-3.5 text-slate-400" />
-                      <span>{t.addProduct.barcode}</span>
-                    </span>
-                    <span className="text-slate-400 font-normal ml-1">({t.common.optional})</span>
-                  </label>
-
-                  <div className="flex items-stretch gap-2">
-                    <input
-                      type="text"
-                      value={barcode}
-                      onChange={(e) => setBarcode(e.target.value)}
-                      placeholder={t.addProduct.barcodePlaceholder}
-                      className={`flex-1 bg-slate-50/60 font-mono border ${
-                        errors.barcode ? 'border-rose-400 focus:ring-rose-400' : 'border-slate-200 focus:ring-slate-900/10'
-                      } rounded-xl px-3.5 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:border-slate-900 transition-all`}
-                    />
-                    {isScannerSupported && !isScannerOpen && (
-                      <button
-                        type="button"
-                        onClick={startScanner}
-                        title="Scan barcode"
-                        aria-label="Scan barcode"
-                        className="flex-shrink-0 w-10 flex items-center justify-center bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-600 transition-colors shadow-2xs"
-                      >
-                        <ScanLine className="w-4 h-4" />
-                      </button>
-                    )}
-                    {isScannerOpen && (
-                      <button
-                        type="button"
-                        onClick={stopScanner}
-                        title="Stop scanning"
-                        aria-label="Stop scanning"
-                        className="flex-shrink-0 w-10 flex items-center justify-center bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl text-rose-600 transition-colors"
-                      >
-                        <XCircle className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-
-                  {isScannerOpen && (
-                    <div className="mt-2 rounded-xl overflow-hidden border border-slate-200 bg-black relative" style={{ aspectRatio: '16/9' }}>
-                      <video
-                        ref={videoRef}
-                        muted
-                        playsInline
-                        className="w-full h-full object-cover"
-                        aria-label="Barcode camera view"
-                      />
-                      <div
-                        className="absolute inset-x-4 h-0.5 bg-emerald-400/80 rounded-full"
-                        style={{ top: '50%', boxShadow: '0 0 8px 2px rgba(52,211,153,0.5)', animation: 'scanline 2s ease-in-out infinite' }}
-                      />
-                      <p className="absolute bottom-2 left-0 right-0 text-center text-[10px] text-white/70">Point the camera at a barcode to scan it.</p>
-                    </div>
-                  )}
-
-                  {scannerError && (
-                    <p className="text-xs text-amber-600 mt-1 font-medium">{scannerError}</p>
-                  )}
-                  {errors.barcode && (
-                    <p className="text-xs text-rose-600 mt-1 font-medium">{getErrorMessage(errors.barcode)}</p>
-                  )}
-                </div>
               </div>
 
               {/* Category & Unit Information */}

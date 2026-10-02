@@ -175,7 +175,6 @@ export function validateProduct(
   input: {
     name: string;
     sku: string;
-    barcode?: string;
     description?: string;
     category?: string;
     image?: string;
@@ -184,7 +183,7 @@ export function validateProduct(
     costPerCarton: number;
     lowStockThresholdCartons?: number;
   },
-  existingProducts: Array<{ id: string; sku: string; barcode?: string | null }>,
+  existingProducts: Array<{ id: string; sku: string }>,
   currentProductId?: string
 ): ValidationResult {
   const errors: Record<string, string> = {};
@@ -202,16 +201,6 @@ export function validateProduct(
     );
     if (isDuplicateSku) {
       errors.sku = 'skuDuplicate';
-    }
-  }
-
-  if (input.barcode && input.barcode.trim() !== '') {
-    const cleanBarcode = input.barcode.trim().toLowerCase();
-    const isDuplicateBarcode = existingProducts.some(
-      (p) => p.barcode && p.barcode.trim().toLowerCase() === cleanBarcode && p.id !== currentProductId
-    );
-    if (isDuplicateBarcode) {
-      errors.barcode = 'barcodeDuplicate';
     }
   }
 

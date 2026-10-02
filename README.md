@@ -374,7 +374,6 @@ npx supabase db push
 
 ### Phase 2 — Optional Improvements
 
-- [ ] Barcode scanning
 - [ ] Interactive analytics
 - [ ] Low-stock alerts / notifications
 - [ ] Carton ↔ piece conversion enhancements

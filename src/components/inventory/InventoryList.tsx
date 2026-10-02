@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Search, ScanBarcode, ArrowLeft, Plus, X, Layers } from 'lucide-react';
+import { Search, ArrowLeft, Plus, X, Layers } from 'lucide-react';
 import { useStockFlow } from '../../context/StockFlowContext';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -18,15 +18,12 @@ export default function InventoryList() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'in_stock' | 'low_stock' | 'out_of_stock'>('all');
-  const [isScannerOpen, setIsScannerOpen] = useState(false);
-
   // Filter products by search query and stock status
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
       const matchesSearch =
         p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (p.barcode && p.barcode.toLowerCase().includes(searchQuery.toLowerCase())) ||
         p.category.toLowerCase().includes(searchQuery.toLowerCase());
 
       if (!matchesSearch) return false;
@@ -69,9 +66,8 @@ export default function InventoryList() {
         )}
       </div>
 
-      {/* Search Bar with Barcode Scan Affordance */}
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1">
+      {/* Search products */}
+      <div className="relative">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
@@ -90,50 +86,7 @@ export default function InventoryList() {
               <X className="w-3.5 h-3.5" />
             </button>
           )}
-        </div>
-        <button
-          type="button"
-          onClick={() => setIsScannerOpen(true)}
-          aria-label="Scan barcode or QR"
-          className="w-10 h-10 bg-white border border-slate-200/90 rounded-2xl flex items-center justify-center text-slate-600 hover:text-slate-900 hover:border-slate-300 transition-all shadow-2xs flex-shrink-0"
-        >
-          <ScanBarcode className="w-5 h-5" />
-        </button>
       </div>
-
-      {/* Barcode Scanner Modal Simulation */}
-      {isScannerOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
-          <div className="w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 text-center">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-sm text-slate-900">Scan barcode</h3>
-              <button
-                type="button"
-                onClick={() => setIsScannerOpen(false)}
-                aria-label="Close scanner"
-                className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:text-slate-900"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="w-48 h-48 mx-auto my-3 border-2 border-dashed border-blue-500 rounded-2xl flex flex-col items-center justify-center bg-blue-50/40 relative overflow-hidden">
-              <ScanBarcode className="w-12 h-12 text-blue-500 animate-pulse" />
-              <div className="w-full h-0.5 bg-blue-500 absolute top-1/2 animate-bounce" />
-              <p className="text-[11px] text-blue-700 mt-2 font-medium">Hold the barcode in the frame.</p>
-            </div>
-            <p className="text-xs text-slate-500 mt-3">
-              Scan a product barcode to find it.
-            </p>
-            <button
-              type="button"
-              onClick={() => setIsScannerOpen(false)}
-              className="mt-4 w-full py-2 bg-slate-900 text-white rounded-xl text-xs font-semibold hover:bg-slate-800"
-            >
-              Done
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Filter Pills */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar text-xs font-medium">
@@ -299,12 +252,6 @@ export default function InventoryList() {
               <h2 className="text-lg font-bold text-slate-900">{selectedProduct.name}</h2>
               <div className="flex items-center justify-center gap-2 mt-0.5 text-xs text-slate-400 font-mono">
                 <span>SKU: {selectedProduct.sku}</span>
-                {selectedProduct.barcode && (
-                  <>
-                    <span>•</span>
-                    <span>{t.inventory.barcode}: {selectedProduct.barcode}</span>
-                  </>
-                )}
               </div>
 
               <div className="mt-2">
@@ -348,10 +295,6 @@ export default function InventoryList() {
               <div className="flex justify-between py-1 border-b border-slate-50">
                 <span className="text-slate-500">SKU</span>
                 <span className="font-mono font-semibold text-slate-800">{selectedProduct.sku}</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-50">
-                <span className="text-slate-500">{t.inventory.barcode}</span>
-                <span className="font-mono font-semibold text-slate-800">{selectedProduct.barcode || '—'}</span>
               </div>
               {selectedProduct.description && (
                 <div className="flex justify-between py-1 border-b border-slate-50 gap-4">

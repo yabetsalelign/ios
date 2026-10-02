@@ -12,7 +12,6 @@ export interface Product {
   id: string;
   name: string;
   sku: string;
-  barcode?: string;
   description?: string;
   image: string;
   category: string;
@@ -28,7 +27,6 @@ export interface Product {
 export interface ProductFormInput {
   name: string;
   sku: string;
-  barcode?: string;
   description?: string;
   category?: string;
   image?: string;
