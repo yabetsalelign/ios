@@ -30,50 +30,17 @@ All issues were systematically audited and resolved by moving dataset-wide calcu
 
 ### Migration File: `supabase/migrations/20261023000001_dataset_wide_aggregates.sql`
 ```sql
--- 1. Create dataset-wide inventory volume metrics view with RLS inheritance
-CREATE OR REPLACE VIEW public.v_inventory_volume_metrics
-WITH (security_invoker = true)
-AS
+-- 1. Create dataset-wide inventory volume metrics view with SECURITY INVOKER
+-- Using the verified schema column: quantity_cartons
+DROP VIEW IF EXISTS public.v_inventory_volume_metrics CASCADE;
+CREATE VIEW public.v_inventory_volume_metrics
+WITH (security_invoker = true) AS
 SELECT
-  COALESCE(SUM(change) FILTER (WHERE type = 'purchase'), 0)::numeric AS incoming_cartons,
-  COALESCE(SUM(ABS(change)) FILTER (WHERE type = 'sale'), 0)::numeric AS outgoing_cartons,
-  COUNT(*)::bigint AS total_transactions
+  COALESCE(SUM(CASE WHEN type = 'purchase' THEN quantity_cartons ELSE 0 END), 0)::bigint AS incoming_cartons,
+  COALESCE(SUM(CASE WHEN type = 'sale' THEN abs(quantity_cartons) ELSE 0 END), 0)::bigint AS outgoing_cartons
 FROM public.inventory_transactions;
 
--- 2. Standalone aggregation RPC functions for mobile optimization
-CREATE OR REPLACE FUNCTION public.get_inventory_volume_metrics()
-RETURNS TABLE(
-  incoming_cartons numeric,
-  outgoing_cartons numeric,
-  total_transactions bigint
-)
-LANGUAGE plpgsql
-SECURITY INVOKER
-AS $$
-BEGIN
-  RETURN QUERY
-  SELECT
-    COALESCE(SUM(change) FILTER (WHERE it.type = 'purchase'), 0)::numeric AS incoming_cartons,
-    COALESCE(SUM(ABS(change)) FILTER (WHERE it.type = 'sale'), 0)::numeric AS outgoing_cartons,
-    COUNT(*)::bigint AS total_transactions
-  FROM public.inventory_transactions it;
-END;
-$$;
-
-CREATE OR REPLACE FUNCTION public.get_total_customer_credit()
-RETURNS numeric
-LANGUAGE plpgsql
-SECURITY INVOKER
-AS $$
-BEGIN
-  RETURN COALESCE(
-    (SELECT SUM(outstanding_balance)
-     FROM public.v_customer_balances
-     WHERE outstanding_balance > 0),
-    0
-  );
-END;
-$$;
+COMMENT ON VIEW public.v_inventory_volume_metrics IS 'Dataset-wide inventory volume totals calculated natively in PostgreSQL using quantity_cartons under caller security invoker.';
 ```
 
 ---

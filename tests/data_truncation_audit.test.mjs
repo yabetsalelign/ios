@@ -7,17 +7,17 @@ test('1. Volume Aggregates: Demonstrating former limit truncation vs dataset-wid
   // Scenario: 350 inventory transactions exist in the database (200 purchases of 10 cartons, 150 sales of 5 cartons)
   const transactions = [];
   for (let i = 0; i < 200; i++) {
-    transactions.push({ id: `tx-p-${i}`, type: 'purchase', change: 10, created_at: new Date(Date.now() - i * 1000).toISOString() });
+    transactions.push({ id: `tx-p-${i}`, type: 'purchase', quantity_cartons: 10, created_at: new Date(Date.now() - i * 1000).toISOString() });
   }
   for (let i = 0; i < 150; i++) {
-    transactions.push({ id: `tx-s-${i}`, type: 'sale', change: -5, created_at: new Date(Date.now() - (200 + i) * 1000).toISOString() });
+    transactions.push({ id: `tx-s-${i}`, type: 'sale', quantity_cartons: -5, created_at: new Date(Date.now() - (200 + i) * 1000).toISOString() });
   }
   assert.equal(transactions.length, 350, 'Total transactions should be 350');
 
   // Former flawed logic: fetched with .limit(200) and computed totals in client memory
   const formerSample = transactions.slice(0, 200); // represents .limit(200)
-  const truncatedIncoming = formerSample.filter(t => t.type === 'purchase').reduce((acc, t) => acc + t.change, 0);
-  const truncatedOutgoing = formerSample.filter(t => t.type === 'sale').reduce((acc, t) => acc + Math.abs(t.change), 0);
+  const truncatedIncoming = formerSample.filter(t => t.type === 'purchase').reduce((acc, t) => acc + t.quantity_cartons, 0);
+  const truncatedOutgoing = formerSample.filter(t => t.type === 'sale').reduce((acc, t) => acc + Math.abs(t.quantity_cartons), 0);
 
   // In the former sample, all 200 are purchases, so 0 sales are counted!
   assert.equal(truncatedIncoming, 2000);
@@ -25,15 +25,15 @@ test('1. Volume Aggregates: Demonstrating former limit truncation vs dataset-wid
 
   // Authoritative Database Aggregate Logic (matching v_inventory_volume_metrics):
   // SELECT
-  //   COALESCE(SUM(change) FILTER (WHERE type = 'purchase'), 0) AS incoming_cartons,
-  //   COALESCE(SUM(ABS(change)) FILTER (WHERE type = 'sale'), 0) AS outgoing_cartons
-  // FROM inventory_transactions;
+  //   COALESCE(SUM(CASE WHEN type = 'purchase' THEN quantity_cartons ELSE 0 END), 0)::bigint AS incoming_cartons,
+  //   COALESCE(SUM(CASE WHEN type = 'sale' THEN abs(quantity_cartons) ELSE 0 END), 0)::bigint AS outgoing_cartons
+  // FROM public.inventory_transactions;
   const datasetWideIncoming = transactions
     .filter(t => t.type === 'purchase')
-    .reduce((acc, t) => acc + t.change, 0);
+    .reduce((acc, t) => acc + t.quantity_cartons, 0);
   const datasetWideOutgoing = transactions
     .filter(t => t.type === 'sale')
-    .reduce((acc, t) => acc + Math.abs(t.change), 0);
+    .reduce((acc, t) => acc + Math.abs(t.quantity_cartons), 0);
 
   assert.equal(datasetWideIncoming, 2000, 'Full incoming cartons calculated accurately');
   assert.equal(datasetWideOutgoing, 750, 'Full outgoing cartons calculated accurately without truncation');
