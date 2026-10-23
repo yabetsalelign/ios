@@ -166,7 +166,10 @@ export default function AppShell() {
       <ProductFormModal />
 
       {toast && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[60] flex items-start gap-3 bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-2xl min-w-[260px] max-w-[340px]">
+        <div
+          className="fixed left-1/2 -translate-x-1/2 z-[60] flex items-start gap-3 bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-2xl min-w-[260px] max-w-[340px]"
+          style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 5rem)' }}
+        >
           <div className="min-w-0 flex-1">
             <p className="text-xs font-bold">{toast.title}</p>
             <p className="text-[11px] text-slate-300 mt-0.5">

@@ -172,7 +172,10 @@ export default function LoginView() {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 flex flex-col justify-between p-4 sm:p-6 lg:p-8 text-slate-100">
+    <div
+      className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 flex flex-col justify-between p-4 sm:p-6 lg:p-8 text-slate-100"
+      style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 1rem)' }}
+    >
 
       {/* Top bar */}
       <div className="w-full max-w-5xl mx-auto flex items-center justify-between pt-2">

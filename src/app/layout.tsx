@@ -7,12 +7,18 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     title: "StockFlow",
+  },
+  formatDetection: {
+    telephone: false,
+    date: false,
+    address: false,
+    email: false,
   },
   icons: {
     icon: "/icon.svg",
-    apple: "/icon.svg",
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
 };
 
@@ -20,8 +26,10 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#FFFFFF",
+  // themeColor is intentionally omitted here — the inline appearance bootstrap
+  // script manages it dynamically to match the user's dark/light preference.
 };
+
 
 const appearanceBootstrap = `(() => {
   const root = document.documentElement;
@@ -35,14 +43,21 @@ const appearanceBootstrap = `(() => {
     const isDark = preference === 'dark' || (preference === 'system' && media.matches);
     root.dataset.appearance = preference;
     root.dataset.theme = isDark ? 'dark' : 'light';
-    const themeColor = document.querySelector('meta[name="theme-color"]');
-    if (themeColor) themeColor.setAttribute('content', isDark ? '#0b1220' : '#FFFFFF');
+    const color = isDark ? '#0b1220' : '#FFFFFF';
+    let themeColor = document.querySelector('meta[name="theme-color"]');
+    if (!themeColor) {
+      themeColor = document.createElement('meta');
+      themeColor.setAttribute('name', 'theme-color');
+      document.head.appendChild(themeColor);
+    }
+    themeColor.setAttribute('content', color);
   };
   applyAppearance();
   media.addEventListener('change', applyAppearance);
   window.addEventListener('storage', applyAppearance);
   window.addEventListener('stockflow_appearance_change', applyAppearance);
 })();`;
+
 
 export default function RootLayout({
   children,
