@@ -47,20 +47,86 @@ export default function ReportsView() {
 
     let isActive = true;
     const loadSales = async () => {
-      const [salesResult, itemsResult] = await Promise.all([
-        supabase.from('sales').select('id, total_amount, created_at'),
-        supabase.from('sale_items').select('sale_id, product_id, quantity_cartons, subtotal'),
-      ]);
+      try {
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+        sevenDaysAgo.setHours(0, 0, 0, 0);
+        const isoStartDate = sevenDaysAgo.toISOString();
 
-      if (!isActive) return;
-      if (salesResult.error || itemsResult.error) {
-        console.error('Failed to load report sales data:', salesResult.error || itemsResult.error);
-        setSalesLoadFailed(true);
-      } else {
-        setSales(salesResult.data ?? []);
-        setSaleItems(itemsResult.data ?? []);
+        // 1. Fetch complete sales dataset for the 7-day period in batches to avoid API row-limit truncation
+        let allSales: ReportSale[] = [];
+        let from = 0;
+        const batchSize = 1000;
+        let hasMore = true;
+
+        while (hasMore) {
+          const { data, error } = await supabase
+            .from('sales')
+            .select('id, total_amount, created_at')
+            .gte('created_at', isoStartDate)
+            .order('created_at', { ascending: false })
+            .range(from, from + batchSize - 1);
+
+          if (!isActive) return;
+          if (error) throw error;
+
+          if (data && data.length > 0) {
+            allSales = allSales.concat(data);
+            if (data.length < batchSize) {
+              hasMore = false;
+            } else {
+              from += batchSize;
+            }
+          } else {
+            hasMore = false;
+          }
+        }
+
+        // 2. Fetch sale_items specifically matching the 7-day sales in batches
+        let allItems: ReportSaleItem[] = [];
+        const saleIds = allSales.map((s) => s.id);
+        const chunkSize = 200;
+
+        for (let i = 0; i < saleIds.length; i += chunkSize) {
+          if (!isActive) return;
+          const chunk = saleIds.slice(i, i + chunkSize);
+          let itemsFrom = 0;
+          let itemsHasMore = true;
+
+          while (itemsHasMore) {
+            const { data, error } = await supabase
+              .from('sale_items')
+              .select('sale_id, product_id, quantity_cartons, subtotal')
+              .in('sale_id', chunk)
+              .range(itemsFrom, itemsFrom + batchSize - 1);
+
+            if (!isActive) return;
+            if (error) throw error;
+
+            if (data && data.length > 0) {
+              allItems = allItems.concat(data);
+              if (data.length < batchSize) {
+                itemsHasMore = false;
+              } else {
+                itemsFrom += batchSize;
+              }
+            } else {
+              itemsHasMore = false;
+            }
+          }
+        }
+
+        if (!isActive) return;
+        setSales(allSales);
+        setSaleItems(allItems);
+        setSalesLoaded(true);
+      } catch (err) {
+        console.error('Failed to load complete report sales data:', err);
+        if (isActive) {
+          setSalesLoadFailed(true);
+          setSalesLoaded(true);
+        }
       }
-      setSalesLoaded(true);
     };
 
     void loadSales();

@@ -163,6 +163,8 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
   // Runtime data — starts empty; populated from Supabase after authentication
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [customerBalances, setCustomerBalances] = useState<Map<string, CustomerFinancialSummary>>(new Map());
+  const [inventoryVolumeTotals, setInventoryVolumeTotals] = useState<{ incomingCartons: number; outgoingCartons: number } | null>(null);
   const [rawTransactions, setRawTransactions] = useState<RawLedgerTransaction[]>([]);
   const [inventoryTransactions, setInventoryTransactions] = useState<InventoryTransaction[]>([]);
 
@@ -218,7 +220,26 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
         setCustomers(mapped);
       }
 
-      // 3. Ledger transactions (for customer financial summaries)
+      // 3. Customer balances directly from PostgreSQL view v_customer_balances
+      // Computes complete dataset totals per customer natively in the database with 0 row truncation
+      const { data: balanceRows } = await (supabase.from('v_customer_balances') as any)
+        .select('customer_id, total_sales, total_paid, outstanding_balance, transaction_count');
+
+      if (balanceRows && balanceRows.length > 0) {
+        const bMap = new Map<string, CustomerFinancialSummary>();
+        balanceRows.forEach((r: any) => {
+          bMap.set(r.customer_id, {
+            customerId: r.customer_id,
+            totalSales: Number(r.total_sales ?? 0),
+            totalPaid: Number(r.total_paid ?? 0),
+            outstandingBalance: Number(r.outstanding_balance ?? 0),
+            transactionCount: Number(r.transaction_count ?? 0),
+          });
+        });
+        setCustomerBalances(bMap);
+      }
+
+      // 4. Ledger transactions (for customer ledger drill-down)
       const { data: ledgerRows } = await (supabase.from('ledger_transactions') as any)
         .select('id, customer_id, reference_number, type, description, amount, payment_method, created_at')
         .order('created_at', { ascending: true });
@@ -238,11 +259,23 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
         setRawTransactions(mapped);
       }
 
-      // 4. Inventory transactions (for logbook / activity feed)
+      // 5. Dataset-wide inventory volume metrics directly aggregated in PostgreSQL
+      const { data: volumeRow } = await (supabase.from('v_inventory_volume_metrics') as any)
+        .select('incoming_cartons, outgoing_cartons')
+        .maybeSingle();
+
+      if (volumeRow) {
+        setInventoryVolumeTotals({
+          incomingCartons: Number(volumeRow.incoming_cartons ?? 0),
+          outgoingCartons: Number(volumeRow.outgoing_cartons ?? 0),
+        });
+      }
+
+      // 6. Recent inventory transactions (bounded query for activity logbook feed)
       const { data: invRows } = await (supabase.from('inventory_transactions') as any)
         .select('id, reference_number, product_id, type, quantity_cartons, related_sale_id, related_purchase_id, created_at')
         .order('created_at', { ascending: false })
-        .limit(200);
+        .limit(50);
 
       if (invRows) {
         // Build a name lookup from already-loaded products
@@ -576,9 +609,10 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
 
   const getCustomerLedgerData = (customerId: string) => {
     const result = calculateCustomerFinancials(customerId, rawTransactions);
+    const dbSummary = customerBalances.get(customerId);
     return {
       entries: result.entries as CustomerLedgerEntry[],
-      summary: {
+      summary: dbSummary || {
         customerId: result.customerId,
         totalSales: result.totalSales,
         totalPaid: result.totalPaid,
@@ -589,6 +623,9 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
   };
 
   const getCustomerSummary = (customerId: string): CustomerFinancialSummary => {
+    if (customerBalances.has(customerId)) {
+      return customerBalances.get(customerId)!;
+    }
     return getCustomerLedgerData(customerId).summary;
   };
 
@@ -601,24 +638,37 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
       0
     );
 
-    const totalCustomerCreditETB = customers.reduce((acc, c) => {
-      const summary = calculateCustomerFinancials(c.id, rawTransactions);
-      return acc + (summary.outstandingBalance > 0 ? summary.outstandingBalance : 0);
-    }, 0);
+    // Total Customer Credit: calculated from complete database-aggregated customer balances when available
+    let totalCustomerCreditETB = 0;
+    if (customerBalances.size > 0) {
+      for (const summary of customerBalances.values()) {
+        if (summary.outstandingBalance > 0) {
+          totalCustomerCreditETB += summary.outstandingBalance;
+        }
+      }
+    } else {
+      totalCustomerCreditETB = customers.reduce((acc, c) => {
+        const summary = calculateCustomerFinancials(c.id, rawTransactions);
+        return acc + (summary.outstandingBalance > 0 ? summary.outstandingBalance : 0);
+      }, 0);
+    }
 
     const lowStockCount = products.filter(
       (p) => p.currentStockCartons <= p.lowStockThresholdCartons
     ).length;
 
-    // Incoming from purchase transactions
-    const incomingCartons = inventoryTransactions
-      .filter((t) => t.type === 'purchase')
-      .reduce((acc, t) => acc + t.quantityCartons, 0);
+    // Incoming & Outgoing: use complete dataset-wide aggregates from PostgreSQL view v_inventory_volume_metrics
+    const incomingCartons = inventoryVolumeTotals !== null
+      ? inventoryVolumeTotals.incomingCartons
+      : inventoryTransactions
+          .filter((t) => t.type === 'purchase')
+          .reduce((acc, t) => acc + t.quantityCartons, 0);
 
-    // Outgoing from sale transactions (stored as negative or absolute)
-    const outgoingCartons = inventoryTransactions
-      .filter((t) => t.type === 'sale')
-      .reduce((acc, t) => acc + Math.abs(t.quantityCartons), 0);
+    const outgoingCartons = inventoryVolumeTotals !== null
+      ? inventoryVolumeTotals.outgoingCartons
+      : inventoryTransactions
+          .filter((t) => t.type === 'sale')
+          .reduce((acc, t) => acc + Math.abs(t.quantityCartons), 0);
 
     return {
       totalInventoryValueETB,
@@ -628,7 +678,7 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
       outgoingCartons,
       lowStockCount,
     };
-  }, [products, customers, rawTransactions, inventoryTransactions]);
+  }, [products, customers, customerBalances, inventoryVolumeTotals, rawTransactions, inventoryTransactions]);
 
   // ==========================================
   // TRANSACTION WORKFLOW 1: RECORD SALE
@@ -775,6 +825,8 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
     setProducts(updatedProducts);
     setRawTransactions((prev) => [...prev, ...newLedgerTxs]);
     setInventoryTransactions((prev) => [...newInvTxs, ...prev]);
+    const totalSaleCartons = input.items.reduce((acc, i) => acc + i.quantityCartons, 0);
+    setInventoryVolumeTotals((prev) => prev ? { ...prev, outgoingCartons: prev.outgoingCartons + totalSaleCartons } : null);
 
     setSuccessFeedback({
       type: 'sale',
@@ -1005,6 +1057,7 @@ export function StockFlowProvider({ children }: { children: React.ReactNode }) {
     // Purchase updates inventory ONLY. Customer balances remain strictly untouched.
     setProducts(updatedProducts);
     setInventoryTransactions((prev) => [newInvTx, ...prev]);
+    setInventoryVolumeTotals((prev) => prev ? { ...prev, incomingCartons: prev.incomingCartons + input.quantityCartons } : null);
 
     setSuccessFeedback({
       type: 'purchase',

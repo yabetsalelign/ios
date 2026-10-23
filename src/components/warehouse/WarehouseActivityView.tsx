@@ -44,17 +44,13 @@ export default function WarehouseActivityView() {
         <div className="bg-[#ECFDF5] border border-emerald-100 rounded-2xl p-3.5 shadow-2xs">
           <p className="text-[10px] font-semibold text-emerald-800 uppercase tracking-wider">{t.warehouse.comingIn}</p>
           <p className="text-xl font-extrabold text-slate-900 mt-1 tabular-nums">{metrics.incomingCartons.toLocaleString()}</p>
-          <p className="text-[10px] text-emerald-700 font-medium mt-0.5">
-            {t.dashboard.cartons}{inventoryTransactions.length >= 200 ? ' (Recent 200)' : ''}
-          </p>
+          <p className="text-[10px] text-emerald-700 font-medium mt-0.5">{t.dashboard.cartons}</p>
         </div>
 
         <div className="bg-[#FFF7ED] border border-orange-100 rounded-2xl p-3.5 shadow-2xs">
           <p className="text-[10px] font-semibold text-orange-800 uppercase tracking-wider">{t.warehouse.sold}</p>
           <p className="text-xl font-extrabold text-slate-900 mt-1 tabular-nums">{metrics.outgoingCartons.toLocaleString()}</p>
-          <p className="text-[10px] text-orange-700 font-medium mt-0.5">
-            {t.dashboard.cartons}{inventoryTransactions.length >= 200 ? ' (Recent 200)' : ''}
-          </p>
+          <p className="text-[10px] text-orange-700 font-medium mt-0.5">{t.dashboard.cartons}</p>
         </div>
       </div>
 

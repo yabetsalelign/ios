@@ -114,7 +114,7 @@ export default function ManagerDashboard() {
             <span className="text-xs font-normal text-slate-400 ml-1">{t.dashboard.cartons}</span>
           </div>
           <span className="text-[10px] text-emerald-600 font-medium">
-            {t.dashboard.comingInSub}{inventoryTransactions.length >= 200 ? ' (Recent 200)' : ''}
+            {t.dashboard.comingInSub}
           </span>
         </div>
 
@@ -130,7 +130,7 @@ export default function ManagerDashboard() {
             <span className="text-xs font-normal text-slate-400 ml-1">{t.dashboard.cartons}</span>
           </div>
           <span className="text-[10px] text-orange-600 font-medium">
-            {t.dashboard.soldSub}{inventoryTransactions.length >= 200 ? ' (Recent 200)' : ''}
+            {t.dashboard.soldSub}
           </span>
         </div>
 

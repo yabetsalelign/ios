@@ -22,6 +22,8 @@ export default function CustomerLedger({ customerId }: CustomerLedgerProps) {
   const { t, language } = useLanguage();
 
   const [activeSubTab, setActiveSubTab] = useState<'transactions' | 'details'>('transactions');
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 20;
 
   const customer = customers.find((c) => c.id === customerId);
 
@@ -202,64 +204,96 @@ export default function CustomerLedger({ customerId }: CustomerLedgerProps) {
                 {t.ledger.noTransactions}
               </div>
             ) : (
-              entries.map((entry) => {
-                const isSale = entry.type === 'Sale';
-                const isPayment = entry.type === 'Payment';
+              entries
+                .slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+                .map((entry) => {
+                  const isSale = entry.type === 'Sale';
+                  const isPayment = entry.type === 'Payment';
 
-                return (
-                  <div
-                    key={entry.id}
-                    className="grid grid-cols-12 gap-2 px-3.5 py-3 items-center hover:bg-slate-50/50 transition-colors text-xs"
-                  >
-                    {/* Date & Ref */}
-                    <div className="col-span-3 min-w-0">
-                      <p className="font-semibold text-slate-900 truncate">{entry.date.split(',')[0]}</p>
-                      <p className="text-[10px] text-slate-400 font-mono truncate">{entry.referenceNumber}</p>
-                    </div>
+                  return (
+                    <div
+                      key={entry.id}
+                      className="grid grid-cols-12 gap-2 px-3.5 py-3 items-center hover:bg-slate-50/50 transition-colors text-xs"
+                    >
+                      {/* Date & Ref */}
+                      <div className="col-span-3 min-w-0">
+                        <p className="font-semibold text-slate-900 truncate">{entry.date.split(',')[0]}</p>
+                        <p className="text-[10px] text-slate-400 font-mono truncate">{entry.referenceNumber}</p>
+                      </div>
 
-                    {/* Type Pill */}
-                    <div className="col-span-2">
-                      <span
-                        className={`inline-block text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                          isSale
-                            ? 'bg-blue-50 text-blue-700'
-                            : isPayment
-                            ? 'bg-emerald-50 text-emerald-700'
-                            : 'bg-slate-100 text-slate-700'
-                        }`}
-                      >
-                        {isSale ? t.ledger.saleType : isPayment ? t.ledger.paymentType : t.ledger.adjustmentType}
-                      </span>
-                    </div>
+                      {/* Type Pill */}
+                      <div className="col-span-2">
+                        <span
+                          className={`inline-block text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                            isSale
+                              ? 'bg-blue-50 text-blue-700'
+                              : isPayment
+                              ? 'bg-emerald-50 text-emerald-700'
+                              : 'bg-slate-100 text-slate-700'
+                          }`}
+                        >
+                          {isSale ? t.ledger.saleType : isPayment ? t.ledger.paymentType : t.ledger.adjustmentType}
+                        </span>
+                      </div>
 
-                    {/* Amount (Positive = Sale credit added, Negative = Payment settled) */}
-                    <div className="col-span-4 text-right">
-                      <p
-                        className={`font-bold font-mono ${
-                          isPayment
-                            ? 'text-emerald-700'
-                            : isSale
-                            ? 'text-slate-900'
-                            : 'text-amber-700'
-                        }`}
-                      >
-                        {isSale ? `+${entry.amount.toLocaleString()}` : `${entry.amount.toLocaleString()}`}
-                      </p>
-                      <p className="text-[10px] text-slate-400 truncate">{entry.description}</p>
-                    </div>
+                      {/* Amount (Positive = Sale credit added, Negative = Payment settled) */}
+                      <div className="col-span-4 text-right">
+                        <p
+                          className={`font-bold font-mono ${
+                            isPayment
+                              ? 'text-emerald-700'
+                              : isSale
+                              ? 'text-slate-900'
+                              : 'text-amber-700'
+                          }`}
+                        >
+                          {isSale ? `+${entry.amount.toLocaleString()}` : `${entry.amount.toLocaleString()}`}
+                        </p>
+                        <p className="text-[10px] text-slate-400 truncate">{entry.description}</p>
+                      </div>
 
-                    {/* Running Balance */}
-                    <div className="col-span-3 text-right">
-                      <p className="font-bold text-slate-900 font-mono">
-                        {entry.runningBalance.toLocaleString()}
-                      </p>
-                      <p className="text-[9px] text-slate-400">ETB</p>
+                      {/* Running Balance */}
+                      <div className="col-span-3 text-right">
+                        <p className="font-bold text-slate-900 font-mono">
+                          {entry.runningBalance.toLocaleString()}
+                        </p>
+                        <p className="text-[9px] text-slate-400">ETB</p>
+                      </div>
                     </div>
-                  </div>
-                );
-              })
+                  );
+                })
             )}
           </div>
+
+          {/* Pagination Controls */}
+          {entries.length > PAGE_SIZE && (
+            <div className="px-4 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+              <span className="text-[11px]">
+                Showing {((currentPage - 1) * PAGE_SIZE) + 1}–{Math.min(currentPage * PAGE_SIZE, entries.length)} of {entries.length} transactions
+              </span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 font-medium"
+                >
+                  Previous
+                </button>
+                <span className="text-[11px] font-semibold text-slate-700 px-1">
+                  {currentPage} / {Math.ceil(entries.length / PAGE_SIZE)}
+                </span>
+                <button
+                  type="button"
+                  disabled={currentPage >= Math.ceil(entries.length / PAGE_SIZE)}
+                  onClick={() => setCurrentPage((p) => Math.min(Math.ceil(entries.length / PAGE_SIZE), p + 1))}
+                  className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 font-medium"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         /* Tab 2: Account Details & Metadata */

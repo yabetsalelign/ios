@@ -14,6 +14,8 @@ export default function CustomerList() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterDebtOnly, setFilterDebtOnly] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 25;
 
   const filteredCustomers = useMemo(() => {
     return customers.filter((c) => {
@@ -31,6 +33,9 @@ export default function CustomerList() {
       return true;
     });
   }, [customers, searchQuery, filterDebtOnly, getCustomerSummary]);
+
+  const totalPages = Math.ceil(filteredCustomers.length / PAGE_SIZE) || 1;
+  const paginatedCustomers = filteredCustomers.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
     <div className="space-y-4">
@@ -59,14 +64,20 @@ export default function CustomerList() {
           <input
             type="text"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setPage(1);
+            }}
             placeholder={t.customers.searchPlaceholder}
             className="w-full bg-white border border-slate-200/90 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all shadow-2xs"
           />
           {searchQuery && (
             <button
               type="button"
-              onClick={() => setSearchQuery('')}
+              onClick={() => {
+                setSearchQuery('');
+                setPage(1);
+              }}
               aria-label="Clear search"
               className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
             >
@@ -76,7 +87,10 @@ export default function CustomerList() {
         </div>
         <button
           type="button"
-          onClick={() => setFilterDebtOnly((prev) => !prev)}
+          onClick={() => {
+            setFilterDebtOnly((prev) => !prev);
+            setPage(1);
+          }}
           title="Show customers with a balance due"
           className={`h-10 px-3 border rounded-2xl flex items-center gap-1.5 text-xs font-medium transition-all shadow-2xs flex-shrink-0 ${
             filterDebtOnly
@@ -104,7 +118,7 @@ export default function CustomerList() {
             </p>
           </div>
         ) : (
-          filteredCustomers.map((customer) => {
+          paginatedCustomers.map((customer) => {
             // Warehouse users may be blocked from ledger_transactions by RLS.
             // If rawTransactions is empty for a non-manager, we cannot distinguish
             // "settled" from "data hidden" — show a neutral restricted indicator.
@@ -169,6 +183,36 @@ export default function CustomerList() {
           })
         )}
       </div>
+
+      {/* Pagination Controls */}
+      {filteredCustomers.length > PAGE_SIZE && (
+        <div className="bg-white border border-slate-200/70 rounded-2xl p-3 flex items-center justify-between text-xs text-slate-500 shadow-2xs">
+          <span className="text-[11px]">
+            Showing {((page - 1) * PAGE_SIZE) + 1}–{Math.min(page * PAGE_SIZE, filteredCustomers.length)} of {filteredCustomers.length} customers
+          </span>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              disabled={page === 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 font-medium"
+            >
+              Previous
+            </button>
+            <span className="text-[11px] font-semibold text-slate-700 px-1">
+              {page} / {totalPages}
+            </span>
+            <button
+              type="button"
+              disabled={page >= totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 font-medium"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
       <CustomerFormModal
         isOpen={isAddOpen}
         onClose={() => setIsAddOpen(false)}
