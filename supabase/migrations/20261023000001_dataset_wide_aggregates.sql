@@ -9,7 +9,6 @@
 -- ─────────────────────────────────────────────
 -- 1. INVENTORY VOLUME TOTALS VIEW
 -- ─────────────────────────────────────────────
-drop view if exists public.v_inventory_volume_metrics cascade;
 create view public.v_inventory_volume_metrics
 with (security_invoker = true) as
 select
