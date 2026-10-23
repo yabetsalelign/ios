@@ -113,7 +113,9 @@ export default function ManagerDashboard() {
             {metrics.incomingCartons.toLocaleString()}
             <span className="text-xs font-normal text-slate-400 ml-1">{t.dashboard.cartons}</span>
           </div>
-          <span className="text-[10px] text-emerald-600 font-medium">{t.dashboard.comingInSub}</span>
+          <span className="text-[10px] text-emerald-600 font-medium">
+            {t.dashboard.comingInSub}{inventoryTransactions.length >= 200 ? ' (Recent 200)' : ''}
+          </span>
         </div>
 
         <div className="bg-white border border-slate-200/70 rounded-2xl p-3.5 shadow-xs">
@@ -127,7 +129,9 @@ export default function ManagerDashboard() {
             {metrics.outgoingCartons.toLocaleString()}
             <span className="text-xs font-normal text-slate-400 ml-1">{t.dashboard.cartons}</span>
           </div>
-          <span className="text-[10px] text-orange-600 font-medium">{t.dashboard.soldSub}</span>
+          <span className="text-[10px] text-orange-600 font-medium">
+            {t.dashboard.soldSub}{inventoryTransactions.length >= 200 ? ' (Recent 200)' : ''}
+          </span>
         </div>
 
         <button

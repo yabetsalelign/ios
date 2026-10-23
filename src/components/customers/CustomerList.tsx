@@ -7,7 +7,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import CustomerFormModal from './CustomerFormModal';
 
 export default function CustomerList() {
-  const { customers, currentUser, getCustomerSummary, setSelectedCustomerId } = useStockFlow();
+  const { customers, currentUser, getCustomerSummary, setSelectedCustomerId, rawTransactions } = useStockFlow();
   const { t } = useLanguage();
   const isManager = currentUser.role === 'manager';
 
@@ -105,8 +105,12 @@ export default function CustomerList() {
           </div>
         ) : (
           filteredCustomers.map((customer) => {
-            const summary = getCustomerSummary(customer.id);
-            const hasDebt = summary.outstandingBalance > 0;
+            // Warehouse users may be blocked from ledger_transactions by RLS.
+            // If rawTransactions is empty for a non-manager, we cannot distinguish
+            // "settled" from "data hidden" — show a neutral restricted indicator.
+            const hasTransactionAccess = currentUser.role === 'manager' || rawTransactions.length > 0;
+            const summary = hasTransactionAccess ? getCustomerSummary(customer.id) : null;
+            const hasDebt = summary !== null && summary.outstandingBalance > 0;
 
             return (
               <div
@@ -124,29 +128,39 @@ export default function CustomerList() {
                       {customer.name}
                     </h3>
                     <p className="text-[11px] text-slate-400 font-mono">{customer.phone}</p>
-                    <p className="text-[11px] text-slate-500 mt-0.5">
-                      {summary.transactionCount} {t.customers.transactionsCount}
-                    </p>
+                    {summary !== null && (
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        {summary.transactionCount} {t.customers.transactionsCount}
+                      </p>
+                    )}
                   </div>
                 </div>
 
                 {/* Right: Outstanding Balance Pill & Chevron */}
                 <div className="flex items-center gap-3 flex-shrink-0">
                   <div className="text-right">
-                    <div
-                      className={`inline-block text-xs font-bold px-2.5 py-1 rounded-full ${
-                        hasDebt
-                          ? 'bg-rose-50 text-rose-700 border border-rose-200/70'
-                          : 'bg-emerald-50 text-emerald-700 border border-emerald-200/70'
-                      }`}
-                    >
-                      {hasDebt
-                        ? `${t.customers.amountOwed}: ${summary.outstandingBalance.toLocaleString()} ETB`
-                        : `${t.customers.settled} (0 ETB)`}
-                    </div>
-                    <p className="text-[10px] text-slate-400 mt-0.5 font-mono">
-                      {t.customers.totalSales}: {summary.totalSales.toLocaleString()} ETB
-                    </p>
+                    {summary !== null ? (
+                      <>
+                        <div
+                          className={`inline-block text-xs font-bold px-2.5 py-1 rounded-full ${
+                            hasDebt
+                              ? 'bg-rose-50 text-rose-700 border border-rose-200/70'
+                              : 'bg-emerald-50 text-emerald-700 border border-emerald-200/70'
+                          }`}
+                        >
+                          {hasDebt
+                            ? `${t.customers.amountOwed}: ${summary.outstandingBalance.toLocaleString()} ETB`
+                            : `${t.customers.settled} (0 ETB)`}
+                        </div>
+                        <p className="text-[10px] text-slate-400 mt-0.5 font-mono">
+                          {t.customers.totalSales}: {summary.totalSales.toLocaleString()} ETB
+                        </p>
+                      </>
+                    ) : (
+                      <div className="inline-block text-xs font-medium px-2.5 py-1 rounded-full bg-slate-100 text-slate-500 border border-slate-200/60">
+                        {'–'}
+                      </div>
+                    )}
                   </div>
                   <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-slate-700 group-hover:translate-x-0.5 transition-all" />
                 </div>

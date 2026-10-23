@@ -16,6 +16,8 @@ export default function CustomerLedger({ customerId }: CustomerLedgerProps) {
     setSelectedCustomerId,
     setActiveModal,
     setPreselectedCustomerId,
+    currentUser,
+    rawTransactions,
   } = useStockFlow();
   const { t, language } = useLanguage();
 
@@ -38,8 +40,9 @@ export default function CustomerLedger({ customerId }: CustomerLedgerProps) {
     );
   }
 
+  const hasTransactionAccess = currentUser.role === 'manager' || rawTransactions.length > 0;
   const { entries, summary } = getCustomerLedgerData(customerId);
-  const hasDebt = summary.outstandingBalance > 0;
+  const hasDebt = hasTransactionAccess && summary.outstandingBalance > 0;
 
   return (
     <div className="space-y-4">
@@ -53,16 +56,23 @@ export default function CustomerLedger({ customerId }: CustomerLedgerProps) {
           <ArrowLeft className="w-4 h-4" />
           <span>{t.ledger.backToCustomers}</span>
         </button>
-        <div
-          className={`text-right px-2.5 py-1 rounded-xl text-xs font-bold border ${
-            hasDebt
-              ? 'bg-rose-50 text-rose-700 border-rose-200/80'
-              : 'bg-emerald-50 text-emerald-700 border-emerald-200/80'
-          }`}
-        >
-          <span className="text-[10px] block font-medium opacity-80 uppercase tracking-wider">{t.ledger.amountOwed}</span>
-          <span className="font-mono">{summary.outstandingBalance.toLocaleString()} ETB</span>
-        </div>
+        {hasTransactionAccess ? (
+          <div
+            className={`text-right px-2.5 py-1 rounded-xl text-xs font-bold border ${
+              hasDebt
+                ? 'bg-rose-50 text-rose-700 border-rose-200/80'
+                : 'bg-emerald-50 text-emerald-700 border-emerald-200/80'
+            }`}
+          >
+            <span className="text-[10px] block font-medium opacity-80 uppercase tracking-wider">{t.ledger.amountOwed}</span>
+            <span className="font-mono">{summary.outstandingBalance.toLocaleString()} ETB</span>
+          </div>
+        ) : (
+          <div className="text-right px-2.5 py-1 rounded-xl text-xs font-medium bg-slate-100 text-slate-500 border border-slate-200/60">
+            <span className="text-[10px] block font-medium opacity-80 uppercase tracking-wider">{t.ledger.amountOwed}</span>
+            <span className="font-mono">–</span>
+          </div>
+        )}
       </div>
 
       {/* Customer Name & Info Card */}
@@ -93,27 +103,27 @@ export default function CustomerLedger({ customerId }: CustomerLedgerProps) {
         <div className="bg-[#ECFDF5] border border-emerald-100 rounded-2xl p-3 text-center shadow-2xs">
           <p className="text-[10px] font-semibold text-emerald-800 uppercase tracking-wider">{t.ledger.totalSales}</p>
           <p className="text-base sm:text-lg font-extrabold text-slate-900 mt-0.5 font-mono">
-            {summary.totalSales.toLocaleString()}
+            {hasTransactionAccess ? summary.totalSales.toLocaleString() : '–'}
           </p>
-          <p className="text-[9px] font-semibold text-emerald-700">ETB</p>
+          <p className="text-[9px] font-semibold text-emerald-700">{hasTransactionAccess ? 'ETB' : 'Manager only'}</p>
         </div>
 
         {/* Total Paid */}
         <div className="bg-[#F0FDF4] border border-slate-200/70 rounded-2xl p-3 text-center shadow-2xs">
           <p className="text-[10px] font-semibold text-slate-600 uppercase tracking-wider">{t.ledger.totalPaid}</p>
           <p className="text-base sm:text-lg font-extrabold text-slate-900 mt-0.5 font-mono">
-            {summary.totalPaid.toLocaleString()}
+            {hasTransactionAccess ? summary.totalPaid.toLocaleString() : '–'}
           </p>
-          <p className="text-[9px] font-semibold text-slate-500">ETB</p>
+          <p className="text-[9px] font-semibold text-slate-500">{hasTransactionAccess ? 'ETB' : 'Manager only'}</p>
         </div>
 
         {/* Total Credit / Outstanding */}
         <div className="bg-[#FFF1F2] border border-rose-100 rounded-2xl p-3 text-center shadow-2xs">
           <p className="text-[10px] font-semibold text-rose-800 uppercase tracking-wider">{t.ledger.amountOwed}</p>
           <p className="text-base sm:text-lg font-extrabold text-rose-700 mt-0.5 font-mono">
-            {summary.outstandingBalance.toLocaleString()}
+            {hasTransactionAccess ? summary.outstandingBalance.toLocaleString() : '–'}
           </p>
-          <p className="text-[9px] font-semibold text-rose-600">ETB</p>
+          <p className="text-[9px] font-semibold text-rose-600">{hasTransactionAccess ? 'ETB' : 'Manager only'}</p>
         </div>
       </div>
 
@@ -183,7 +193,11 @@ export default function CustomerLedger({ customerId }: CustomerLedgerProps) {
 
           {/* Ledger Rows */}
           <div className="divide-y divide-slate-100">
-            {entries.length === 0 ? (
+            {!hasTransactionAccess ? (
+              <div className="p-6 text-center text-slate-400 text-xs">
+                Transaction history is restricted to managers.
+              </div>
+            ) : entries.length === 0 ? (
               <div className="p-6 text-center text-slate-400 text-xs">
                 {t.ledger.noTransactions}
               </div>

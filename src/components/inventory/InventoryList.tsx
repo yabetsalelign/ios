@@ -234,7 +234,7 @@ export default function InventoryList() {
                 type="button"
                 onClick={() => setSelectedProductId(null)}
                 aria-label="Close details"
-                className="w-7 h-7 rounded-full bg-slate-100 text-slate-500 hover:text-slate-900 flex items-center justify-center"
+                className="w-10 h-10 rounded-full bg-slate-100 text-slate-500 hover:text-slate-900 flex items-center justify-center transition-colors touch-manipulation"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -318,12 +318,19 @@ export default function InventoryList() {
                   {selectedProduct.sellingPricePerCarton.toLocaleString()} ETB
                 </span>
               </div>
-              <div className="flex justify-between py-1 border-b border-slate-50">
-                <span className="text-slate-500">{t.inventory.costPrice}</span>
-                <span className="font-medium text-slate-700 font-mono">
-                  {selectedProduct.costPerCarton.toLocaleString()} ETB
-                </span>
-              </div>
+              {currentUser.role === 'manager' ? (
+                <div className="flex justify-between py-1 border-b border-slate-50">
+                  <span className="text-slate-500">{t.inventory.costPrice}</span>
+                  <span className="font-medium text-slate-700 font-mono">
+                    {selectedProduct.costPerCarton.toLocaleString()} ETB
+                  </span>
+                </div>
+              ) : (
+                <div className="flex justify-between py-1 border-b border-slate-50">
+                  <span className="text-slate-500">{t.inventory.costPrice}</span>
+                  <span className="text-slate-400 text-[11px] italic">Manager only</span>
+                </div>
+              )}
             </div>
 
             {/* Action Buttons */}

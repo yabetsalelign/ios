@@ -52,6 +52,8 @@ export function calculateCustomerFinancials(
       running += tx.amount; // tx.amount is negative
       totalPaid += Math.abs(tx.amount);
     } else if (tx.type === 'Adjustment') {
+      // Adjustments (credits/writeoffs) shift the running balance but are not
+      // classified as sales or payments — derive outstanding from running total.
       running += tx.amount;
     }
 
@@ -65,7 +67,9 @@ export function calculateCustomerFinancials(
     customerId,
     totalSales,
     totalPaid,
-    outstandingBalance: totalSales - totalPaid,
+    // Use the final running total (not totalSales - totalPaid) so that
+    // Adjustment entries are correctly reflected in the outstanding balance.
+    outstandingBalance: running,
     transactionCount: customerTxs.length,
     entries: [...entriesAscending].reverse(), // Newest on top for user display
   };

@@ -73,7 +73,7 @@ export default function AppShell() {
       case 'customers':
         return <CustomerList />;
       case 'reports':
-        return <ReportsView />;
+        return isManager ? <ReportsView /> : <WarehouseActivityView />;
       default:
         return isManager ? <ManagerDashboard /> : <WarehouseActivityView />;
     }
@@ -113,11 +113,11 @@ export default function AppShell() {
               </div>
 
               <div className="flex items-center gap-2">
-                <div className="flex items-center p-0.5 bg-slate-200/80 rounded-xl text-[11px] font-semibold">
+                <div className="flex items-center p-0.5 bg-slate-200/80 rounded-xl text-xs font-semibold">
                   <button
                     type="button"
                     onClick={() => setLanguage('en')}
-                    className={`px-2.5 py-1 rounded-lg transition-colors ${language === 'en'
+                    className={`min-h-[38px] min-w-[40px] px-3 py-1.5 flex items-center justify-center rounded-lg transition-colors touch-manipulation ${language === 'en'
                         ? 'bg-white text-slate-900 shadow-2xs font-bold'
                         : 'text-slate-600'
                       }`}
@@ -128,7 +128,7 @@ export default function AppShell() {
                   <button
                     type="button"
                     onClick={() => setLanguage('am')}
-                    className={`px-2.5 py-1 rounded-lg transition-colors ${language === 'am'
+                    className={`min-h-[38px] min-w-[40px] px-3 py-1.5 flex items-center justify-center rounded-lg transition-colors touch-manipulation ${language === 'am'
                         ? 'bg-white text-slate-900 shadow-2xs font-bold'
                         : 'text-slate-600'
                       }`}
@@ -140,7 +140,7 @@ export default function AppShell() {
                 <button
                   type="button"
                   onClick={() => setIsProfileOpen(true)}
-                  className="w-8 h-8 rounded-full overflow-hidden bg-slate-200 border border-slate-300 shadow-2xs active:scale-95 transition-transform"
+                  className="w-10 h-10 rounded-full overflow-hidden bg-slate-200 border border-slate-300 shadow-2xs active:scale-95 transition-transform flex-shrink-0 touch-manipulation"
                 >
                   <img
                     src={currentUser.avatarUrl}

@@ -110,7 +110,7 @@ export default function ProfileModal() {
             type="button"
             onClick={() => setIsProfileOpen(false)}
             aria-label={t.profile.close}
-            className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:text-slate-900 hover:bg-slate-200 flex items-center justify-center transition-colors"
+            className="w-10 h-10 rounded-full bg-slate-100 text-slate-500 hover:text-slate-900 hover:bg-slate-200 flex items-center justify-center transition-colors touch-manipulation"
           >
             <X className="w-4 h-4 stroke-[2.5px]" />
           </button>
